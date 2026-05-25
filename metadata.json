@@ -1,0 +1,6 @@
+{
+  "name": "MiWISPro",
+  "description": "Aplicación de gestión de clientes y servicios de internet de Miwis Pro con búsquedas avanzadas y operaciones de perfil.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

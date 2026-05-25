@@ -1,0 +1,64 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer concentric ring -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M 54,12 A 42,42 0 1 1 53.99,12 Z" />
+
+    <!-- Inner concentric ring -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M 54,17 A 37,37 0 1 1 53.99,17 Z" />
+
+    <!-- Network connection paths -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:pathData="M54,34 L33,44 M54,34 L54,59 M33,44 L54,59 M33,64 L54,59 M54,75 L54,59 M54,59 L75,43 M54,59 L75,65" />
+
+    <!-- Node circles (white solid dots) -->
+    <!-- Top node -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 54,29 A 5,5 0 1 1 53.99,29 Z" />
+
+    <!-- Top Left node -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 33,39 A 5,5 0 1 1 32.99,39 Z" />
+
+    <!-- Bottom Left node -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 33,59 A 5,5 0 1 1 32.99,59 Z" />
+
+    <!-- central connecting master node -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 54,53.5 A 5.5,5.5 0 1 1 53.99,53.5 Z" />
+
+    <!-- Bottom mid node -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 54,70 A 5,5 0 1 1 53.99,70 Z" />
+
+    <!-- Top Right node -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 75,38 A 5,5 0 1 1 74.99,38 Z" />
+
+    <!-- Bottom Right node -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 75,60 A 5,5 0 1 1 74.99,60 Z" />
+
+</vector>
