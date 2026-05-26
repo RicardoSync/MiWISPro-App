@@ -38,7 +38,6 @@ import com.example.ui.theme.*
 import com.example.ui.viewmodel.ClientViewModel
 import com.example.ui.viewmodel.UiState
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientesScreen(
     viewModel: ClientViewModel,
@@ -80,25 +79,29 @@ fun ClientesScreen(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
         ) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { viewModel.updateSearchQuery(it) },
-            placeholder = { Text("Buscar por nombre, teléfono...") },
-            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = "Buscar") },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Limpiar")
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { viewModel.updateSearchQuery(it) },
+                placeholder = { Text("Buscar por nombre, teléfono...") },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = "Buscar") },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.updateSearchQuery("") }) {
+                            Icon(Icons.Rounded.Close, contentDescription = "Limpiar")
+                        }
                     }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .testTag("search_input"),
-            singleLine = true,
-            shape = OutlinedTextFieldDefaults.shape
-        )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .testTag("search_input"),
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
+            )
 
         Spacer(modifier = Modifier.height(6.dp))
 
@@ -150,12 +153,14 @@ fun ClientesScreen(
                     }
                 }
                 is UiState.Success -> {
-                    val filteredClients = clientsList.filter { client ->
-                        // Keyword fields match
-                        val nameMatch = client.nombreCompleto?.contains(searchQuery, ignoreCase = true) ?: false
-                        val phoneMatch = client.telefono?.contains(searchQuery, ignoreCase = true) ?: false
-                        val ipMatch = client.ipCliente?.contains(searchQuery, ignoreCase = true) ?: false
-                        searchQuery.isEmpty() || nameMatch || phoneMatch || ipMatch
+                    val filteredClients = remember(clientsList, searchQuery) {
+                        clientsList.filter { client ->
+                            // Keyword fields match
+                            val nameMatch = client.nombreCompleto?.contains(searchQuery, ignoreCase = true) ?: false
+                            val phoneMatch = client.telefono?.contains(searchQuery, ignoreCase = true) ?: false
+                            val ipMatch = client.ipCliente?.contains(searchQuery, ignoreCase = true) ?: false
+                            searchQuery.isEmpty() || nameMatch || phoneMatch || ipMatch
+                        }
                     }
 
                     if (filteredClients.isEmpty()) {
@@ -189,13 +194,15 @@ fun ClientesScreen(
                         }
                     } else {
                         Column(modifier = Modifier.fillMaxSize()) {
-                            // Pagination Computations
+                            // Pagination Computations cached to prevent scroll jank
                             val totalItems = filteredClients.size
                             val totalPages = maxOf(1, kotlin.math.ceil(totalItems.toDouble() / itemsPerPage).toInt())
                             val safeCurrentPage = minOf(currentPage, totalPages)
-                            val startIndex = (safeCurrentPage - 1) * itemsPerPage
-                            val endIndex = minOf(startIndex + itemsPerPage, totalItems)
-                            val paginatedList = filteredClients.subList(startIndex, endIndex)
+                            val paginatedList = remember(filteredClients, safeCurrentPage, itemsPerPage) {
+                                val startIndex = (safeCurrentPage - 1) * itemsPerPage
+                                val endIndex = minOf(startIndex + itemsPerPage, totalItems)
+                                filteredClients.subList(startIndex, endIndex)
+                            }
 
                             LazyColumn(
                                 modifier = Modifier
@@ -208,7 +215,6 @@ fun ClientesScreen(
                                     ClientCard(
                                         client = client,
                                         onDetail = { viewModel.selectClientForDetail(client) },
-                                        onDeuda = { viewModel.selectClientForDetail(client) },
                                         onPago = { viewModel.selectClientForPago(client) },
                                         onToggleStatus = { clientToToggle = client }
                                     )
@@ -282,7 +288,7 @@ fun ClientesScreen(
                     }
                 }
             }
-        }
+            }
         } // Closes Column
 
         FloatingActionButton(
@@ -301,7 +307,6 @@ fun ClientesScreen(
 fun ClientCard(
     client: Client,
     onDetail: () -> Unit,
-    onDeuda: () -> Unit,
     onPago: () -> Unit,
     onToggleStatus: () -> Unit
 ) {
@@ -310,13 +315,13 @@ fun ClientCard(
     val isAdeudo = estadoInt == 2
     val isSuspendido = estadoInt == 3
 
-    Card(
+    OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier
@@ -358,10 +363,10 @@ fun ClientCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "${client.telefono ?: "Sin Teléfono"} • ${if (client.ipCliente.isNullOrEmpty()) "IP Dinámica" else client.ipCliente}",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -475,16 +480,6 @@ fun ClientCard(
                     Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Perfil", style = MaterialTheme.typography.labelSmall)
-                }
-
-                FilledTonalButton(
-                    onClick = onDeuda,
-                    modifier = Modifier.weight(1f).testTag("action_deuda_${client.id}"),
-                    contentPadding = PaddingValues(horizontal = 0.dp)
-                ) {
-                    Icon(Icons.Rounded.Payments, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Deuda", style = MaterialTheme.typography.labelSmall)
                 }
 
                 Button(

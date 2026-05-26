@@ -1,6 +1,6 @@
 package com.example.ui.screens
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -48,7 +48,7 @@ fun MikrotikDashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dashboard Mikrotik", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge) },
+                title = { Text("Dashboard MikroTik", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Regresar", tint = MaterialTheme.colorScheme.primary)
@@ -57,8 +57,7 @@ fun MikrotikDashboardScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground
-                ),
-                modifier = Modifier.statusBarsPadding()
+                )
             )
         },
         modifier = modifier.fillMaxSize(),
@@ -99,87 +98,141 @@ fun MikrotikDashboardScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(rememberScrollState())
-                                .padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Header
-                            Card(
-                                shape = RoundedCornerShape(28.dp),
-                                colors = CardDefaults.cardColors(containerColor = GreenBadgeBg),
+                            // Online Status and Basic Info
+                            OutlinedCard(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.3f)),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column(modifier = Modifier.padding(20.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Icon(Icons.Rounded.Dns, contentDescription = null, tint = GreenBadgeText)
-                                        Text(data.nombre ?: "Router", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = GreenBadgeText)
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text("IP: ${data.ipAddress ?: "N/D"}", style = MaterialTheme.typography.bodyLarge, color = GreenBadgeText.copy(alpha = 0.8f))
+                                Column {
+                                    ListItem(
+                                        headlineContent = { Text(data.nombre ?: "Router Desconocido") },
+                                        supportingContent = { Text("IP: ${data.ipAddress ?: "N/D"}") },
+                                        leadingContent = { Icon(Icons.Rounded.Dns, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                        trailingContent = {
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(8.dp))
+                                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                            ) {
+                                                Text("ONLINE", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                            }
+                                        },
+                                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                                    )
                                 }
                             }
 
-                            // Gauges
+                            // CPU & Memory Gauges
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 // CPU Gauge
-                                Card(
-                                    shape = RoundedCornerShape(28.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                                val cpuLoad = data.cpuLoad ?: 0
+                                val cpuColor = if (cpuLoad > 80) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                
+                                OutlinedCard(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("CPU Load", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("CPU", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Spacer(modifier = Modifier.height(16.dp))
-                                        GaugeChart(
-                                            percentage = (data.cpuLoad ?: 0) / 100f,
-                                            color = if ((data.cpuLoad ?: 0) > 80) Color.Red else MaterialTheme.colorScheme.primary,
-                                            label = "${data.cpuLoad ?: 0}%"
-                                        )
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
+                                            CircularProgressIndicator(
+                                                progress = { 1f },
+                                                modifier = Modifier.fillMaxSize(),
+                                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                                strokeWidth = 8.dp,
+                                                strokeCap = StrokeCap.Round
+                                            )
+                                            CircularProgressIndicator(
+                                                progress = { cpuLoad / 100f },
+                                                modifier = Modifier.fillMaxSize(),
+                                                color = cpuColor,
+                                                strokeWidth = 8.dp,
+                                                strokeCap = StrokeCap.Round
+                                            )
+                                            Text("${cpuLoad}%", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = cpuColor)
+                                        }
                                     }
                                 }
 
                                 // Memory Gauge
-                                // Attempt to parse "76.9MiB" vs "128MiB"
                                 val freeMem = parseSizeToMB(data.freeMemory)
                                 val totalMem = parseSizeToMB(data.totalMemory)
                                 val usedMem = totalMem - freeMem
                                 val memPercent = if (totalMem > 0) (usedMem / totalMem).toFloat() else 0f
+                                val memColor = if (memPercent > 0.85f) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
 
-                                Card(
-                                    shape = RoundedCornerShape(28.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                                OutlinedCard(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("Memoria Usada", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("RAM", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Spacer(modifier = Modifier.height(16.dp))
-                                        GaugeChart(
-                                            percentage = memPercent,
-                                            color = MaterialTheme.colorScheme.secondary,
-                                            label = "${(memPercent * 100).toInt()}%"
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text("${String.format("%.1f", usedMem)} / ${String.format("%.1f", totalMem)} MB", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
+                                            CircularProgressIndicator(
+                                                progress = { 1f },
+                                                modifier = Modifier.fillMaxSize(),
+                                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                                strokeWidth = 8.dp,
+                                                strokeCap = StrokeCap.Round
+                                            )
+                                            CircularProgressIndicator(
+                                                progress = { memPercent },
+                                                modifier = Modifier.fillMaxSize(),
+                                                color = memColor,
+                                                strokeWidth = 8.dp,
+                                                strokeCap = StrokeCap.Round
+                                            )
+                                            Text("${(memPercent * 100).toInt()}%", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = memColor)
+                                        }
                                     }
                                 }
                             }
 
                             // System Info List
-                            Card(
-                                shape = RoundedCornerShape(28.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                            OutlinedCard(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column(modifier = Modifier.padding(20.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                        Text("Información de Sistema", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                    }
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Divider()
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    DetailRow("Uptime", data.uptime ?: "-")
-                                    DetailRow("Versión RouterOS", data.version ?: "-")
-                                    DetailRow("Última Actualización", data.lastUpdate ?: "-")
+                                Column {
+                                    ListItem(
+                                        headlineContent = { Text("Información de Sistema", fontWeight = FontWeight.Bold) },
+                                        leadingContent = { Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                                    )
+                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                                    ListItem(
+                                        headlineContent = { Text("Uptime") },
+                                        supportingContent = { Text(data.uptime ?: "-", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface) },
+                                        leadingContent = { Icon(Icons.Rounded.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.secondary) },
+                                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                                    )
+                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                                    ListItem(
+                                        headlineContent = { Text("Versión RouterOS") },
+                                        supportingContent = { Text(data.version ?: "-", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface) },
+                                        leadingContent = { Icon(Icons.Rounded.Memory, contentDescription = null, tint = MaterialTheme.colorScheme.secondary) },
+                                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                                    )
+                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                                    ListItem(
+                                        headlineContent = { Text("Última Actualización") },
+                                        supportingContent = { Text(data.lastUpdate ?: "-", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface) },
+                                        leadingContent = { Icon(Icons.Rounded.Event, contentDescription = null, tint = MaterialTheme.colorScheme.secondary) },
+                                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                                    )
                                 }
                             }
                         }
@@ -190,51 +243,7 @@ fun MikrotikDashboardScreen(
     }
 }
 
-@Composable
-fun GaugeChart(percentage: Float, color: Color, label: String, modifier: Modifier = Modifier) {
-    Box(contentAlignment = Alignment.Center, modifier = modifier.size(120.dp)) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val sweepAngle = 240f
-            val startAngle = 150f
-            val strokeWidth = 12.dp.toPx()
-            
-            // Background arc
-            drawArc(
-                color = color.copy(alpha = 0.2f),
-                startAngle = startAngle,
-                sweepAngle = sweepAngle,
-                useCenter = false,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-                size = Size(size.width, size.height)
-            )
 
-            // Foreground arc
-            drawArc(
-                color = color,
-                startAngle = startAngle,
-                sweepAngle = sweepAngle * percentage.coerceIn(0f, 1f),
-                useCenter = false,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-                size = Size(size.width, size.height)
-            )
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = label, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
-        }
-    }
-}
-
-@Composable
-private fun DetailRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-    }
-}
 
 private fun parseSizeToMB(sizeStr: String?): Double {
     if (sizeStr == null) return 0.0

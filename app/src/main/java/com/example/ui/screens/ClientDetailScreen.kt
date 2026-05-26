@@ -79,8 +79,8 @@ fun ClientDetailScreen(
 
     Scaffold(
         topBar = {
-            MediumTopAppBar(
-                title = { Text(client.nombreCompleto?.uppercase() ?: "PERFIL DE CLIENTE", fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            TopAppBar(
+                title = { Text("Perfil del Cliente", fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onBack, modifier = Modifier.testTag("detail_back_button")) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Regresar")
@@ -270,62 +270,25 @@ fun ClientInfoTabContent(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 40.dp)
     ) {
-        // --- HEADER SECTION ---
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Avatar Image
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Rounded.Person,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(60.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "@cliente_${client.id}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Stats Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    ProfileStatItem(icon = Icons.Rounded.WifiTethering, value = client.tipoConexion ?: "Desconocido", label = "Conexión")
-                    ProfileStatItem(icon = Icons.Rounded.Speed, value = client.nombrePaquete ?: "Estándar", label = "Paquete")
-                }
-            }
-        }
-
         // --- PERSONAL INFO GRID ---
         item {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text("Información Personal", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp))
                 
-                Card(
+                OutlinedCard(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column {
+                        ListItem(
+                            headlineContent = { Text("Nombre Completo") },
+                            supportingContent = { Text(client.nombreCompleto?.uppercase() ?: "SIN NOMBRE", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface) },
+                            leadingContent = { Icon(Icons.Rounded.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                         ListItem(
                             headlineContent = { Text("Estado") },
                             supportingContent = { Text(if (isActive) "Activo" else "Suspendido") },
@@ -356,9 +319,10 @@ fun ClientInfoTabContent(
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text("Configuraciones", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp))
 
-                Card(
+                OutlinedCard(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column {
@@ -399,9 +363,10 @@ fun ClientInfoTabContent(
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text("Acciones", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp))
                 
-                Card(
+                OutlinedCard(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = if (isActive) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer),
+                    colors = CardDefaults.outlinedCardColors(containerColor = if (isActive) MaterialTheme.colorScheme.errorContainer.copy(alpha=0.5f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha=0.5f)),
+                    border = BorderStroke(1.dp, if (isActive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     ListItem(
@@ -422,9 +387,10 @@ fun ClientInfoTabContent(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Card(
+                OutlinedCard(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha=0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     ListItem(
@@ -536,18 +502,19 @@ fun ClientConsumoTabContent(
             contentPadding = PaddingValues(bottom = 40.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // --- RING PROGRESS INDICATOR ---
+            // --- RING PROGRESS INDICATOR (DIAL) ---
             item {
-                Card(
-                    shape = RoundedCornerShape(32.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.3f)),
+                OutlinedCard(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.3f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        modifier = Modifier.fillMaxWidth().padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Pico del Periodo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Pico Registrado", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(24.dp))
                         
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(160.dp)) {
@@ -567,131 +534,45 @@ fun ClientConsumoTabContent(
                             )
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(String.format("%.1f", displaySpeed), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-                                Text("Mbps Max", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+                                Text("Mbps", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
                             }
                         }
                     }
                 }
             }
 
-            // --- LINE CHART (CANVAS) ---
+            // --- HISTORIAL DE CONSUMO (PART-TO-WHOLE BAR) ---
             item {
-                Card(
-                    shape = RoundedCornerShape(32.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha=0.3f)),
+                OutlinedCard(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.3f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
-                        Text("Historial (Mbps)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Text("Historial de Consumo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                        val primaryColor = MaterialTheme.colorScheme.primary
-                        val gradientColors = listOf(primaryColor.copy(alpha = 0.5f), Color.Transparent)
+                        Text("Saturación de Ancho de Banda", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                        Spacer(modifier = Modifier.height(8.dp))
                         
-                        val onSurfaceColor = MaterialTheme.colorScheme.onSurface
-                        val secondaryColor = MaterialTheme.colorScheme.secondary
-
-                        // NATIVE COMPOSE CANVAS LINE CHART
-                        Canvas(modifier = Modifier.fillMaxWidth().height(250.dp).padding(start = 16.dp, bottom = 16.dp)) {
-                            val width = size.width
-                            val height = size.height
-                            
-                            val stepX = width / max(1, intervalData.size - 1)
-                            val points = intervalData.mapIndexed { index, data ->
-                                val x = index * stepX
-                                val y = height - ((data.downMbps / maxSpeed) * height)
-                                Offset(x, y)
+                        LinearProgressIndicator(
+                            progress = { scorePercent },
+                            modifier = Modifier.fillMaxWidth().height(24.dp).clip(RoundedCornerShape(12.dp)),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            strokeCap = StrokeCap.Round
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("Consumo Actual", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                                Text(String.format("%.1f Mbps", displaySpeed), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                             }
-
-                            if (points.isNotEmpty()) {
-                                val path = androidx.compose.ui.graphics.Path()
-                                val fillPath = androidx.compose.ui.graphics.Path()
-                                
-                                path.moveTo(points.first().x, points.first().y)
-                                fillPath.moveTo(points.first().x, height)
-                                fillPath.lineTo(points.first().x, points.first().y)
-
-                                // Cubic Bezier for smooth curves
-                                for (i in 1 until points.size) {
-                                    val prev = points[i - 1]
-                                    val curr = points[i]
-                                    val controlX = (prev.x + curr.x) / 2
-                                    path.cubicTo(controlX, prev.y, controlX, curr.y, curr.x, curr.y)
-                                    fillPath.cubicTo(controlX, prev.y, controlX, curr.y, curr.x, curr.y)
-                                }
-                                
-                                fillPath.lineTo(points.last().x, height)
-                                fillPath.close()
-
-                                // Relleno degradado
-                                drawPath(
-                                    path = fillPath,
-                                    brush = Brush.verticalGradient(colors = gradientColors, startY = 0f, endY = height)
-                                )
-
-                                // Línea Principal
-                                drawPath(
-                                    path = path,
-                                    color = primaryColor,
-                                    style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
-                                )
-                            }
-
-                            // Línea base
-                            drawLine(
-                                color = Color.LightGray.copy(alpha = 0.5f),
-                                start = Offset(0f, height),
-                                end = Offset(width, height),
-                                strokeWidth = 2f
-                            )
-                            
-                            // Y-Axis Labels
-                            drawContext.canvas.nativeCanvas.apply {
-                                val paint = android.graphics.Paint().apply {
-                                    color = android.graphics.Color.argb(
-                                        (secondaryColor.alpha * 255).toInt(),
-                                        (secondaryColor.red * 255).toInt(),
-                                        (secondaryColor.green * 255).toInt(),
-                                        (secondaryColor.blue * 255).toInt()
-                                    )
-                                    textSize = 12.dp.toPx()
-                                    textAlign = android.graphics.Paint.Align.RIGHT
-                                    isAntiAlias = true
-                                }
-                                
-                                val maxLabel = String.format("%.1f Mbps", maxSpeed)
-                                drawText(maxLabel, -10f, 20f, paint)
-                                
-                                val midLabel = String.format("%.1f Mbps", maxSpeed / 2)
-                                drawText(midLabel, -10f, height / 2 + 10f, paint)
-                                
-                                drawText("0 Mbps", -10f, height + 5f, paint)
-                            }
-                            
-                            // X-Axis Labels (Time)
-                            drawContext.canvas.nativeCanvas.apply {
-                                val paint = android.graphics.Paint().apply {
-                                    color = android.graphics.Color.argb(
-                                        (secondaryColor.alpha * 255).toInt(),
-                                        (secondaryColor.red * 255).toInt(),
-                                        (secondaryColor.green * 255).toInt(),
-                                        (secondaryColor.blue * 255).toInt()
-                                    )
-                                    textSize = 10.dp.toPx()
-                                    textAlign = android.graphics.Paint.Align.CENTER
-                                    isAntiAlias = true
-                                }
-                                
-                                if (intervalData.isNotEmpty()) {
-                                    val firstTime = formatDate(intervalData.first().fecha).substringAfter(", ")
-                                    val lastTime = formatDate(intervalData.last().fecha).substringAfter(", ")
-                                    val midTime = formatDate(intervalData[intervalData.size / 2].fecha).substringAfter(", ")
-                                    
-                                    drawText(firstTime, 0f, height + 40f, paint.apply { textAlign = android.graphics.Paint.Align.LEFT })
-                                    drawText(midTime, width / 2, height + 40f, paint.apply { textAlign = android.graphics.Paint.Align.CENTER })
-                                    drawText(lastTime, width, height + 40f, paint.apply { textAlign = android.graphics.Paint.Align.RIGHT })
-                                }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("Límite del Periodo", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                                Text(String.format("%.1f Mbps", maxSpeed), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -780,7 +661,7 @@ fun ClientDeudasTabContent(client: Client, data: DeudaResponse, context: Context
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
-        contentPadding = PaddingValues(top = 24.dp, bottom = 40.dp),
+        contentPadding = PaddingValues(bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {

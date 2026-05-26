@@ -446,8 +446,8 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
                   title = {
                     Text(
                       text = when (currentTab) {
-                        HomeTab.Home -> "Panel Ejecutivo"
-                        HomeTab.Clientes -> "Clientes MiWISPro"
+                        HomeTab.Home -> "Panel MiWISPro"
+                        HomeTab.Clientes -> "Gestión de Clientes"
                         HomeTab.Mikrotik -> "Ruteadores"
                         HomeTab.Ajustes -> "Ajustes de Sistema"
                         else -> "MiWISPro"

@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.*
 import com.example.ui.viewmodel.ClientViewModel
+import com.example.ui.viewmodel.HomeTab
 import com.example.ui.viewmodel.UiState
 import com.example.R
 
@@ -49,16 +50,11 @@ fun DashboardScreen(
     val configState by viewModel.appConfig.collectAsState()
     val context = LocalContext.current
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background)
-        ) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
         // Header has been removed as requested
 
         when (val state = dashboardState) {
@@ -157,13 +153,13 @@ fun DashboardScreen(
                     }
                 } else {
                     DashboardContent(
+                        viewModel = viewModel,
                         data = data,
                         context = context
                     )
                 }
             }
         }
-    }
     }
 }
 
@@ -208,6 +204,7 @@ enum class DashboardSectionTab {
 
 @Composable
 fun DashboardContent(
+    viewModel: ClientViewModel,
     data: DashboardData,
     context: Context
 ) {
@@ -218,13 +215,15 @@ fun DashboardContent(
         modifier = Modifier
             .fillMaxSize()
             .testTag("dashboard_scroll"),
-        contentPadding = PaddingValues(bottom = 24.dp, start = 16.dp, end = 16.dp)
+        contentPadding = PaddingValues(bottom = 24.dp)
     ) {
+        // Ingresos (Moved to top)
         item {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp)
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 12.dp)
                     .testTag("kpi_income_card"),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -287,48 +286,70 @@ fun DashboardContent(
             }
         }
 
-        // 2. 2x2 Interactive KPI Metrics Deck
+        // 1. Sección de Estado Rápido (Badges Compactos)
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                QuickStatBadge(
+                    title = "Activos",
+                    value = data.clientesActivos ?: "0",
+                    color = Color(0xFF4CAF50),
+                    modifier = Modifier.weight(1f)
+                )
+                QuickStatBadge(
+                    title = "Suspendidos",
+                    value = data.clientesSuspendidos ?: "0",
+                    color = Color(0xFFF44336),
+                    modifier = Modifier.weight(1f)
+                )
+                QuickStatBadge(
+                    title = "Adeudo",
+                    value = data.clientesAdeudo ?: "0",
+                    color = Color(0xFFFF9800),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        // 2. Cuadrícula de Accesos Directos (Grid Simétrico)
         item {
             Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    KpiCard(
-                        title = "Activos",
-                        value = data.clientesActivos ?: "0",
-                        icon = Icons.Rounded.Group,
-                        accentColor = Color(0xFF4CAF50),
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ShortcutCard(
+                        title = "Clientes",
+                        icon = Icons.Rounded.People,
+                        onClick = { viewModel.selectTab(HomeTab.Clientes) },
                         modifier = Modifier.weight(1f)
                     )
-                    KpiCard(
-                        title = "Suspendidos",
-                        value = data.clientesSuspendidos ?: "0",
-                        icon = Icons.Rounded.PowerOff,
-                        accentColor = Color(0xFFF44336),
+                    ShortcutCard(
+                        title = "MikroTiks",
+                        icon = Icons.Rounded.Router,
+                        onClick = { viewModel.selectTab(HomeTab.Mikrotik) },
                         modifier = Modifier.weight(1f)
                     )
                 }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    KpiCard(
-                        title = "Adeudo",
-                        value = data.clientesAdeudo ?: "0",
-                        icon = Icons.Rounded.AssignmentLate,
-                        accentColor = Color(0xFFFF9800),
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ShortcutCard(
+                        title = "Suspendidos",
+                        icon = Icons.Rounded.Block,
+                        onClick = { viewModel.openSuspendidos(true) },
                         modifier = Modifier.weight(1f)
                     )
-                    KpiCard(
-                        title = "Cancelados",
-                        value = data.clientesCancelados ?: "0",
-                        icon = Icons.Rounded.Block,
-                        accentColor = Color(0xFF9E9E9E),
+                    ShortcutCard(
+                        title = "Tareas",
+                        icon = Icons.Rounded.Assignment,
+                        onClick = { viewModel.openTareas(true) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -342,13 +363,14 @@ fun DashboardContent(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = 10.dp, bottom = 8.dp)
+                modifier = Modifier.padding(top = 10.dp, bottom = 8.dp, start = 16.dp, end = 16.dp)
             )
 
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item {
@@ -392,39 +414,47 @@ fun DashboardContent(
             DashboardSectionTab.Pagos -> {
                 val list = data.ultimosPagos ?: emptyList()
                 if (list.isEmpty()) {
-                    item { LoadingEmptyCard("No se reportan pagos recientes.") }
+                    item { Box(modifier = Modifier.padding(horizontal = 16.dp)) { LoadingEmptyCard("No se reportan pagos recientes.") } }
                 } else {
                     items(list) { item ->
-                        PagoRowCard(item)
+                        Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            PagoRowCard(item)
+                        }
                     }
                 }
             }
             DashboardSectionTab.Vencimientos -> {
                 val list = data.proximosVencer ?: emptyList()
                 if (list.isEmpty()) {
-                    item { LoadingEmptyCard("No hay vencimientos programados.") }
+                    item { Box(modifier = Modifier.padding(horizontal = 16.dp)) { LoadingEmptyCard("No hay vencimientos programados.") } }
                 } else {
                     items(list) { item ->
-                        VencimientoRowCard(item, context)
+                        Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            VencimientoRowCard(item, context)
+                        }
                     }
                 }
             }
             DashboardSectionTab.Deudas -> {
                 val list = data.clientesDeuda ?: emptyList()
                 if (list.isEmpty()) {
-                    item { LoadingEmptyCard("Felicidades! Ningún cliente con deuda activa.") }
+                    item { Box(modifier = Modifier.padding(horizontal = 16.dp)) { LoadingEmptyCard("Felicidades! Ningún cliente con deuda activa.") } }
                 } else {
                     items(list) { item ->
-                        DeudaRowCard(item, context)
+                        Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            DeudaRowCard(item, context)
+                        }
                     }
                 }
             }
             DashboardSectionTab.Distribucion -> {
                 item {
-                    DistributionPanel(
-                        paquetes = data.distribucionPaquetes ?: emptyList(),
-                        routers = data.distribucionRouters ?: emptyList()
-                    )
+                    Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        DistributionPanel(
+                            paquetes = data.distribucionPaquetes ?: emptyList(),
+                            routers = data.distribucionRouters ?: emptyList()
+                        )
+                    }
                 }
             }
         }
@@ -432,53 +462,74 @@ fun DashboardContent(
 }
 
 @Composable
-fun KpiCard(
+fun QuickStatBadge(
     title: String,
     value: String,
-    icon: ImageVector,
-    accentColor: Color,
+    color: Color,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.height(100.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = color.copy(alpha = 0.1f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.2f))
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = accentColor,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Black,
+                color = color
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ShortcutCard(
+    title: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedCard(
+        onClick = onClick,
+        modifier = modifier.height(100.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
 }
+
 
 @Composable
 fun SectionChip(

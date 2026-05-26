@@ -78,20 +78,11 @@ fun RegistrarPagoScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            "Registrar Cobro",
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            "Cliente: ${client.nombreCompleto ?: "Sin Nombre"}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.secondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    Text(
+                        "Registrar Pago",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 },
                 navigationIcon = {
                     IconButton(
@@ -106,10 +97,9 @@ fun RegistrarPagoScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                modifier = Modifier.statusBarsPadding()
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                )
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
@@ -121,7 +111,7 @@ fun RegistrarPagoScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 32.dp, top = 8.dp)
+            contentPadding = PaddingValues(bottom = 32.dp)
         ) {
             
             // Only show form if we are not in successful registration state
@@ -167,13 +157,13 @@ fun RegistrarPagoScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(36.dp)
-                                        .background(BlueBadgeBg, CircleShape),
+                                        .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Rounded.PriceCheck,
+                                        imageVector = Icons.Rounded.Person,
                                         contentDescription = null,
-                                        tint = BlueBadgeText,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -189,7 +179,7 @@ fun RegistrarPagoScreen(
                             )
                             
                             Spacer(modifier = Modifier.height(8.dp))
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             Spacer(modifier = Modifier.height(8.dp))
                             
                             Row(
@@ -202,11 +192,12 @@ fun RegistrarPagoScreen(
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.secondary
                                     )
+                                    val isDeuda = (client.saldoActual?.toDoubleOrNull() ?: 0.0) > 0.0
                                     Text(
                                         text = "$${client.saldoActual ?: "0.00"} MXN",
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = if ((client.saldoActual?.toDoubleOrNull() ?: 0.0) > 0.0) RedBadgeText else GreenBadgeText
+                                        color = if (isDeuda) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                                     )
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
@@ -227,153 +218,126 @@ fun RegistrarPagoScreen(
                     }
                 }
 
-                // Payment Fields Form Card
+                // Payment Fields directly in LazyColumn for flush and clean look
                 item {
-                    Card(
+                    Text(
+                        "Monto a Cobrar (MXN)",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    OutlinedTextField(
+                        value = montoInput,
+                        onValueChange = { montoInput = it },
                         modifier = Modifier
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Text(
-                                "Detalles de la Transacción",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                            .fillMaxWidth()
+                            .testTag("pago_monto_input"),
+                        placeholder = { Text("Ej. 350.00") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Rounded.AttachMoney,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
                             )
-                            
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-
-                            // 1. Amount Field
-                            Column {
-                                Text(
-                                    "Monto a Cobrar (MXN) *",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(bottom = 6.dp)
-                                )
-                                OutlinedTextField(
-                                    value = montoInput,
-                                    onValueChange = { montoInput = it },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .testTag("pago_monto_input"),
-                                    placeholder = { Text("Ej. 350.00") },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Rounded.AttachMoney,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    },
-                                    trailingIcon = {
-                                        if (montoInput.isNotEmpty()) {
-                                            IconButton(onClick = { montoInput = "" }) {
-                                                Icon(Icons.Rounded.Clear, contentDescription = "Limpiar")
-                                            }
-                                        }
-                                    },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                            }
-
-                            // 2. Payment Method Dropdown (Exposed Dropdown Box style)
-                            Column {
-                                Text(
-                                    "Método de Pago *",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(bottom = 6.dp)
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { dropdownExpanded = true }
-                                ) {
-                                    OutlinedTextField(
-                                        value = metodoInput,
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        enabled = false, // We make the actual click occur on the box
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                                            disabledBorderColor = MaterialTheme.colorScheme.outline,
-                                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            disabledLeadingIconColor = MaterialTheme.colorScheme.primary,
-                                            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                        ),
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Rounded.AccountBalance,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                        },
-                                        trailingIcon = {
-                                            Icon(
-                                                imageVector = if (dropdownExpanded) Icons.Rounded.ArrowDropUp else Icons.Rounded.ArrowDropDown,
-                                                contentDescription = "Desplegar"
-                                            )
-                                        },
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
-                                    
-                                    DropdownMenu(
-                                        expanded = dropdownExpanded,
-                                        onDismissRequest = { dropdownExpanded = false },
-                                        modifier = Modifier
-                                            .fillMaxWidth(0.85f)
-                                            .background(MaterialTheme.colorScheme.surface)
-                                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
-                                    ) {
-                                        paymentMethods.forEach { method ->
-                                            DropdownMenuItem(
-                                                text = { Text(method, fontWeight = FontWeight.Medium) },
-                                                onClick = {
-                                                    metodoInput = method
-                                                    dropdownExpanded = false
-                                                }
-                                            )
-                                        }
-                                    }
+                        },
+                        trailingIcon = {
+                            if (montoInput.isNotEmpty()) {
+                                IconButton(onClick = { montoInput = "" }) {
+                                    Icon(Icons.Rounded.Clear, contentDescription = "Limpiar")
                                 }
                             }
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                }
 
-                            // 3. Reference Field
-                            Column {
-                                Text(
-                                    "Referencia / No. de Autorización",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(bottom = 6.dp)
+                item {
+                    Text(
+                        "Método de Pago",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = dropdownExpanded,
+                        onExpandedChange = { dropdownExpanded = it },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = metodoInput,
+                            onValueChange = {},
+                            readOnly = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            ),
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.AccountBalance,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
-                                OutlinedTextField(
-                                    value = referenciaInput,
-                                    onValueChange = { referenciaInput = it },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .testTag("pago_referencia_input"),
-                                    placeholder = { Text("Ej. 1234567890 (Opcional)") },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Rounded.Numbers,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                                    shape = RoundedCornerShape(12.dp)
+                            },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
+                            },
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        
+                        ExposedDropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { dropdownExpanded = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                        ) {
+                            paymentMethods.forEach { method ->
+                                DropdownMenuItem(
+                                    text = { Text(method, fontWeight = FontWeight.Medium) },
+                                    onClick = {
+                                        metodoInput = method
+                                        dropdownExpanded = false
+                                    }
                                 )
                             }
                         }
                     }
+                }
+
+                item {
+                    Text(
+                        "Referencia / Autorización (Opcional)",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    OutlinedTextField(
+                        value = referenciaInput,
+                        onValueChange = { referenciaInput = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("pago_referencia_input"),
+                        placeholder = { Text("Ej. 1234567890") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Rounded.Numbers,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
                 }
 
                 // Action Response States (Error / Loading)
@@ -381,9 +345,9 @@ fun RegistrarPagoScreen(
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                            shape = RoundedCornerShape(16.dp)
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
                         ) {
                             Row(
                                 modifier = Modifier
@@ -394,14 +358,15 @@ fun RegistrarPagoScreen(
                             ) {
                                 CircularProgressIndicator(
                                     strokeWidth = 3.dp,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(20.dp),
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    "Procesando cobro en MiWISPro WEB...",
+                                    "Procesando pago...",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }
@@ -410,8 +375,7 @@ fun RegistrarPagoScreen(
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = RedBadgeBg),
-                            border = BorderStroke(1.dp, RedBadgeText.copy(alpha = 0.3f)),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
@@ -419,22 +383,22 @@ fun RegistrarPagoScreen(
                                     Icon(
                                         imageVector = Icons.Rounded.Error,
                                         contentDescription = null,
-                                        tint = RedBadgeText,
+                                        tint = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        "Error al Procesar Pago",
+                                        "Error al Procesar",
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = RedBadgeText
+                                        color = MaterialTheme.colorScheme.error
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = currentState.message,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = RedBadgeText.copy(alpha = 0.9f)
+                                    color = MaterialTheme.colorScheme.onErrorContainer
                                 )
                             }
                         }
@@ -443,6 +407,7 @@ fun RegistrarPagoScreen(
 
                 // Register payment button helper
                 item {
+                    Spacer(modifier = Modifier.height(16.dp)) // A little push for the bottom action button
                     Button(
                         onClick = {
                             if (montoInput.trim().isEmpty()) {
@@ -462,13 +427,12 @@ fun RegistrarPagoScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(54.dp)
-                            .shadow(2.dp, RoundedCornerShape(16.dp))
+                            .height(56.dp) // Standard robust button height
                             .testTag("pago_submit_button"),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = Color.White
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         enabled = currentState !is UiState.Loading
                     ) {
@@ -479,13 +443,13 @@ fun RegistrarPagoScreen(
                             Icon(
                                 imageVector = Icons.Rounded.PointOfSale,
                                 contentDescription = null,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                "REGISTRAR Y PROCESAR COBRO",
-                                fontWeight = FontWeight.Black,
-                                style = MaterialTheme.typography.bodyMedium
+                                "REGISTRAR PAGO",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
