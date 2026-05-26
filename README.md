@@ -56,3 +56,11 @@ app/src/main/java/com/example/
 │   │
 │   └── viewmodel/         # Lógica de negocio y retención de estado de la UI
 │       └── ClientViewModel.kt
+
+
+<img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 10 35 37 AM (5)" src="https://github.com/user-attachments/assets/5618aae3-ef9e-4e84-a929-24496ab603e9" />
+<img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 10 35 37 AM (4)" src="https://github.com/user-attachments/assets/902e6ed5-7c66-45ca-95b0-7cecb9192802" />
+<img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 10 35 37 AM (3)" src="https://github.com/user-attachments/assets/01e123f0-ff7c-4cb7-96cd-c288f2de9691" />
+<img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 10 35 37 AM (2)" src="https://github.com/user-attachments/assets/baca5aa8-7090-4d89-b0c3-36cd3baf2b8d" />
+<img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 10 35 37 AM (1)" src="https://github.com/user-attachments/assets/760d3930-52c1-4edd-bb8d-f96fe16de32a" />
+<img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 10 35 37 AM" src="https://github.com/user-attachments/assets/05bbee2c-93e9-4871-b6a0-b4fab63a04db" />
