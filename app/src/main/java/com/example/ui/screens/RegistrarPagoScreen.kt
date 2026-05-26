@@ -59,16 +59,20 @@ fun RegistrarPagoScreen(
     // Payment process state
     var registrarState by remember { mutableStateOf<UiState<PagoResponse>?>(null) }
     
+    // Remote payment methods state
+    val metodosState by viewModel.metodosPagoState.collectAsState()
+    LaunchedEffect(Unit) {
+        viewModel.loadMetodosPago()
+    }
+    
     // Dropdown state for payment methods
     var dropdownExpanded by remember { mutableStateOf(false) }
-    val paymentMethods = listOf(
-        "Cobro desde móvil",
-        "Efectivo",
-        "Transferencia",
-        "Tarjeta de Débito",
-        "Tarjeta de Crédito",
-        "Depósito Bancario"
-    )
+    val paymentMethods = if (metodosState is UiState.Success) {
+        val response = (metodosState as UiState.Success<com.example.data.MetodosPagoResponse>).data
+        response.data?.filter { m: com.example.data.MetodoPagoData -> m.activo == 1 }?.map { m: com.example.data.MetodoPagoData -> m.nombre ?: "Método" } ?: listOf("Efectivo")
+    } else {
+        listOf("Cargando...", "Efectivo") // Fallback
+    }
 
     Scaffold(
         topBar = {
@@ -136,11 +140,10 @@ fun RegistrarPagoScreen(
                 item {
                     Card(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .shadow(2.dp, RoundedCornerShape(24.dp)),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Row(
@@ -228,11 +231,10 @@ fun RegistrarPagoScreen(
                 item {
                     Card(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .shadow(2.dp, RoundedCornerShape(24.dp)),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Column(
                             modifier = Modifier.padding(20.dp),
@@ -532,11 +534,10 @@ fun SuccessPaymentCard(
 
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .shadow(4.dp, RoundedCornerShape(28.dp)),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.5.dp, GreenBadgeText.copy(alpha = 0.4f))
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier

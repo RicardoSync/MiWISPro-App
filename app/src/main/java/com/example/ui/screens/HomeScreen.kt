@@ -83,7 +83,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "MIWIS PRO",
+                            text = "MiWISPro App",
                             color = MaterialTheme.colorScheme.onPrimary,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.ExtraBold
@@ -120,14 +120,6 @@ fun HomeScreen(
         }
 
         // Summary KPI Grid
-        item {
-            Text(
-                "Resumen Operativo",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
 
         item {
             Column(

@@ -6,8 +6,9 @@ import kotlinx.coroutines.flow.Flow
 @Entity(tableName = "app_config")
 data class AppConfig(
     @PrimaryKey val id: Int = 1,
-    val subdominio: String = "doblenet",
-    val token: String = "zerocuatro04"
+    val subdominio: String = "",
+    val token: String = "",
+    val termsAccepted: Boolean = false
 )
 
 @Dao
@@ -22,7 +23,7 @@ interface AppConfigDao {
     suspend fun insertConfig(config: AppConfig)
 }
 
-@Database(entities = [AppConfig::class], version = 1, exportSchema = false)
+@Database(entities = [AppConfig::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appConfigDao(): AppConfigDao
 

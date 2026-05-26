@@ -11,6 +11,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.app.DownloadManager
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
 
 sealed interface UiState<out T> {
     object Loading : UiState<Nothing>
@@ -19,7 +23,7 @@ sealed interface UiState<out T> {
 }
 
 enum class HomeTab {
-    Home, Clientes, Pagos, Ajustes, Mikrotik
+    Home, Clientes, Pagos, Ajustes, Mikrotik, Global
 }
 
 data class PaymentRecord(
@@ -45,11 +49,11 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
         _selectedDetailClient.value = client
     }
 
-    private val _selectedDeudaClient = MutableStateFlow<Client?>(null)
-    val selectedDeudaClient: StateFlow<Client?> = _selectedDeudaClient.asStateFlow()
+    private val _selectedRouterId = MutableStateFlow<String?>(null)
+    val selectedRouterId: StateFlow<String?> = _selectedRouterId.asStateFlow()
 
-    fun selectClientForDeuda(client: Client?) {
-        _selectedDeudaClient.value = client
+    fun selectRouterForDashboard(routerId: String?) {
+        _selectedRouterId.value = routerId
     }
 
     private val _selectedPagoClient = MutableStateFlow<Client?>(null)
@@ -57,6 +61,36 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
 
     fun selectClientForPago(client: Client?) {
         _selectedPagoClient.value = client
+    }
+
+    private val _navigateToRegistrarCliente = MutableStateFlow(false)
+    val navigateToRegistrarCliente: StateFlow<Boolean> = _navigateToRegistrarCliente.asStateFlow()
+
+    fun openRegistrarCliente(open: Boolean) {
+        _navigateToRegistrarCliente.value = open
+        if (open) {
+            loadDatosRegistro()
+        }
+    }
+
+    private val _navigateToSuspendidos = MutableStateFlow(false)
+    val navigateToSuspendidos: StateFlow<Boolean> = _navigateToSuspendidos.asStateFlow()
+
+    fun openSuspendidos(open: Boolean) {
+        _navigateToSuspendidos.value = open
+        if (open) {
+            loadClientesSuspendidos()
+        }
+    }
+
+    private val _navigateToHistorialPagos = MutableStateFlow(false)
+    val navigateToHistorialPagos: StateFlow<Boolean> = _navigateToHistorialPagos.asStateFlow()
+
+    fun openHistorialPagos(open: Boolean) {
+        _navigateToHistorialPagos.value = open
+        if (open) {
+            loadHistorialPagos()
+        }
     }
 
     private val _uiState = MutableStateFlow<UiState<List<Client>>>(UiState.Loading)
@@ -80,6 +114,29 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
     // Payment stats & ledger
     private val _payments = MutableStateFlow<List<PaymentRecord>>(emptyList())
     val payments: StateFlow<List<PaymentRecord>> = _payments.asStateFlow()
+
+    private val _metodosPagoState = MutableStateFlow<UiState<com.example.data.MetodosPagoResponse>>(UiState.Loading)
+    val metodosPagoState: StateFlow<UiState<com.example.data.MetodosPagoResponse>> = _metodosPagoState.asStateFlow()
+
+    fun loadMetodosPago() {
+        viewModelScope.launch {
+            _metodosPagoState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getMetodosPago(
+                    token = config.token,
+                    subdominio = config.subdominio
+                )
+                if (response.success) {
+                    _metodosPagoState.value = UiState.Success(response)
+                } else {
+                    _metodosPagoState.value = UiState.Error("Error al cargar métodos de pago.")
+                }
+            } catch (e: Exception) {
+                _metodosPagoState.value = UiState.Error(e.localizedMessage ?: "Error de red")
+            }
+        }
+    }
 
     // MikroTiks routers status flow
     private val _mikrotiksState = MutableStateFlow<UiState<com.example.data.MikrotiksResponse>>(UiState.Loading)
@@ -133,6 +190,9 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
     private val _appConfig = MutableStateFlow(AppConfig())
     val appConfig: StateFlow<AppConfig> = _appConfig.asStateFlow()
 
+    private val _isConfigLoaded = MutableStateFlow(false)
+    val isConfigLoaded: StateFlow<Boolean> = _isConfigLoaded.asStateFlow()
+
     init {
         viewModelScope.launch {
             // Fetch configuration or initialize with default
@@ -142,6 +202,7 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
                 configDao.insertConfig(existingConfig)
             }
             _appConfig.value = existingConfig
+            _isConfigLoaded.value = true
             
             // Initial payload loading with actual db credentials
             loadClientes()
@@ -179,6 +240,29 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
             _appConfig.value = updated
             // Automatically refresh client payload with new settings
             loadClientes()
+        }
+    }
+
+    fun acceptTerms() {
+        viewModelScope.launch {
+            val updated = _appConfig.value.copy(termsAccepted = true)
+            configDao.insertConfig(updated)
+            _appConfig.value = updated
+        }
+    }
+
+    fun downloadTerms(context: Context) {
+        try {
+            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val uri = Uri.parse("https://demo.miwispro.net/controllers/TerminosController.php")
+            val request = DownloadManager.Request(uri)
+                .setTitle("Términos y Condiciones MiWISPro")
+                .setDescription("Descargando archivo PDF")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "Terminos_MiWISPro.pdf")
+            downloadManager.enqueue(request)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -228,6 +312,136 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
         _payments.value = records
+    }
+
+    private val _registrarClienteState = MutableStateFlow<UiState<com.example.data.RegistrarClienteResponse>?>(null)
+    val registrarClienteState: StateFlow<UiState<com.example.data.RegistrarClienteResponse>?> = _registrarClienteState.asStateFlow()
+
+    private val _datosRegistroState = MutableStateFlow<UiState<com.example.data.DatosRegistroResponse>>(UiState.Loading)
+    val datosRegistroState: StateFlow<UiState<com.example.data.DatosRegistroResponse>> = _datosRegistroState.asStateFlow()
+
+    fun loadDatosRegistro() {
+        viewModelScope.launch {
+            _datosRegistroState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getDatosRegistro(
+                    token = config.token,
+                    subdominio = config.subdominio
+                )
+                if (response.success) {
+                    _datosRegistroState.value = UiState.Success(response)
+                } else {
+                    _datosRegistroState.value = UiState.Error("No se pudieron cargar los datos de registro")
+                }
+            } catch (e: Exception) {
+                _datosRegistroState.value = UiState.Error(e.message ?: "Error de red")
+            }
+        }
+    }
+
+    fun resetRegistrarClienteState() {
+        _registrarClienteState.value = null
+    }
+
+    private val _suspendidosState = MutableStateFlow<UiState<com.example.data.ClientesSuspendidosResponse>>(UiState.Loading)
+    val suspendidosState: StateFlow<UiState<com.example.data.ClientesSuspendidosResponse>> = _suspendidosState.asStateFlow()
+
+    fun loadClientesSuspendidos() {
+        viewModelScope.launch {
+            _suspendidosState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getClientesSuspendidos(
+                    token = config.token,
+                    subdominio = config.subdominio
+                )
+                if (response.success) {
+                    _suspendidosState.value = UiState.Success(response)
+                } else {
+                    _suspendidosState.value = UiState.Error("No se pudieron cargar los clientes suspendidos")
+                }
+            } catch (e: Exception) {
+                _suspendidosState.value = UiState.Error(e.message ?: "Error de red")
+            }
+        }
+    }
+
+    private val _historialPagosState = MutableStateFlow<UiState<com.example.data.HistorialPagosResponse>>(UiState.Loading)
+    val historialPagosState: StateFlow<UiState<com.example.data.HistorialPagosResponse>> = _historialPagosState.asStateFlow()
+
+    fun loadHistorialPagos(cliente: String? = null, fecha: String? = null) {
+        viewModelScope.launch {
+            _historialPagosState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getHistorialPagos(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    cliente = cliente?.takeIf { it.isNotBlank() },
+                    fecha = fecha?.takeIf { it.isNotBlank() }
+                )
+                if (response.success) {
+                    _historialPagosState.value = UiState.Success(response)
+                } else {
+                    _historialPagosState.value = UiState.Error("No se pudo cargar el historial de pagos")
+                }
+            } catch (e: Exception) {
+                _historialPagosState.value = UiState.Error(e.message ?: "Error de red")
+            }
+        }
+    }
+
+    fun registrarClienteRemote(
+        nombre: String,
+        tel: String,
+        idPaquete: Int,
+        idMikrotik: Int,
+        diaCorte: Int,
+        proxPago: String,
+        tipoConexion: String?,
+        ipCliente: String?,
+        pppoeUsuario: String?,
+        pppoePassword: String?,
+        coordenadas: String?,
+        dir: String?,
+        idServicioExtra: String?,
+        dni: String?,
+        promesaPago: String?
+    ) {
+        viewModelScope.launch {
+            _registrarClienteState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.registrarCliente(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    nombre = nombre,
+                    tel = tel,
+                    idPaquete = idPaquete,
+                    idMikrotik = idMikrotik,
+                    diaCorte = diaCorte,
+                    proxPago = proxPago,
+                    tipoConexion = tipoConexion,
+                    ipCliente = ipCliente,
+                    pppoeUsuario = pppoeUsuario,
+                    pppoePassword = pppoePassword,
+                    coordenadas = coordenadas,
+                    dir = dir,
+                    idServicioExtra = idServicioExtra,
+                    dni = dni,
+                    promesaPago = promesaPago
+                )
+                if (response.success) {
+                    _registrarClienteState.value = UiState.Success(response)
+                    loadClientes() // Reload to reflect the new client
+                } else {
+                    _registrarClienteState.value = UiState.Error(response.error ?: "La API retornó error.")
+                }
+            } catch (e: Exception) {
+                _registrarClienteState.value = UiState.Error(e.message ?: "Error desconocido")
+            }
+        }
     }
 
     // Toggle client status remotely calling MiwisPro Server APIs
@@ -373,4 +587,296 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
     fun addPayment(payment: PaymentRecord) {
         _payments.value = listOf(payment) + _payments.value
     }
+
+    // Fetches internet consumption for a specific client
+    fun getConsumoClienteRemote(
+        clientId: String,
+        periodo: String = "hoy",
+        minutos: Int = 5,
+        onResult: (state: UiState<com.example.data.ConsumoClienteResponse>) -> Unit
+    ) {
+        viewModelScope.launch {
+            onResult(UiState.Loading)
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getConsumoCliente(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    id = clientId,
+                    periodo = periodo,
+                    minutos = minutos
+                )
+                if (response.success) {
+                    onResult(UiState.Success(response))
+                } else {
+                    onResult(UiState.Error("La API de MiWISPro no encontró información de consumo."))
+                }
+            } catch (e: Exception) {
+                onResult(UiState.Error("Error de Red al consultar consumo: ${e.localizedMessage ?: "Intente de nuevo"}"))
+            }
+        }
+    }
+
+    // Fetches stats for a specific Mikrotik router
+    fun getMikrotikStatsRemote(
+        routerId: String,
+        onResult: (state: UiState<com.example.data.MikrotikStatsResponse>) -> Unit
+    ) {
+        viewModelScope.launch {
+            onResult(UiState.Loading)
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getMikrotikStats(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    id = routerId
+                )
+                if (response.success) {
+                    onResult(UiState.Success(response))
+                } else {
+                    onResult(UiState.Error("La API no pudo obtener las estadísticas del Mikrotik."))
+                }
+            } catch (e: Exception) {
+                onResult(UiState.Error("Error de Red: ${e.localizedMessage ?: "Intente de nuevo"}"))
+            }
+        }
+    }
+
+    // Sync client to Mikrotik
+    fun syncMikrotikRemote(
+        clientId: String,
+        onResult: (success: Boolean, message: String, detail: String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.syncMikrotik(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    id = clientId
+                )
+                if (response.success) {
+                    onResult(true, response.mensaje ?: "Sincronizado exitosamente", response.detalleRouter)
+                } else {
+                    onResult(false, response.error ?: "Error al sincronizar", response.detalleRouter)
+                }
+            } catch (e: Exception) {
+                onResult(false, "Error de red: ${e.localizedMessage ?: "Intente de nuevo"}", null)
+            }
+        }
+    }
+
+    private val _navigateToCortesAutomaticos = MutableStateFlow(false)
+    val navigateToCortesAutomaticos: StateFlow<Boolean> = _navigateToCortesAutomaticos.asStateFlow()
+
+    fun openCortesAutomaticos(open: Boolean) {
+        _navigateToCortesAutomaticos.value = open
+        if (open) {
+            loadConfigCortes()
+        }
+    }
+
+    private val _navigateToTareas = MutableStateFlow(false)
+    val navigateToTareas: StateFlow<Boolean> = _navigateToTareas.asStateFlow()
+
+    fun openTareas(open: Boolean) {
+        _navigateToTareas.value = open
+        if (open) {
+            loadConfigAutomatizacion()
+        }
+    }
+
+    private val _navigateToPremisas = MutableStateFlow(false)
+    val navigateToPremisas: StateFlow<Boolean> = _navigateToPremisas.asStateFlow()
+
+    private val _selectedFacturaDetail = MutableStateFlow<Pair<com.example.data.FacturaData, Boolean>?>(null)
+    val selectedFacturaDetail: StateFlow<Pair<com.example.data.FacturaData, Boolean>?> = _selectedFacturaDetail.asStateFlow()
+
+    fun openPremisas(open: Boolean) {
+        _navigateToPremisas.value = open
+        if (open) {
+            loadFacturas()
+        }
+    }
+
+    private val _facturasState = MutableStateFlow<UiState<com.example.data.FacturasResponse>>(UiState.Loading)
+    val facturasState: StateFlow<UiState<com.example.data.FacturasResponse>> = _facturasState.asStateFlow()
+
+    fun loadFacturas() {
+        viewModelScope.launch {
+            _facturasState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getFacturas(
+                    token = config.token,
+                    subdominio = config.subdominio
+                )
+                if (response.success) {
+                    _facturasState.value = UiState.Success(response)
+                } else {
+                    _facturasState.value = UiState.Error("Error al obtener las premisas/facturas")
+                }
+            } catch (e: Exception) {
+                _facturasState.value = UiState.Error(e.message ?: "Error de red")
+            }
+        }
+    }
+
+    fun anularFactura(
+        idFactura: String,
+        idCliente: String,
+        onResult: (success: Boolean, message: String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.anularFactura(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    idFactura = idFactura,
+                    idCliente = idCliente
+                )
+                if (response.success) {
+                    onResult(true, response.message ?: "Factura anulada correctamente")
+                    loadFacturas() // Reload facturas to reflect changes
+                } else {
+                    onResult(false, response.error ?: "Error al anular la factura")
+                }
+            } catch (e: Exception) {
+                onResult(false, e.message ?: "Error de red")
+            }
+        }
+    }
+
+    fun crearFacturaManual(
+        idCliente: String,
+        onResult: (success: Boolean, message: String, data: com.example.data.CrearFacturaData?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.crearFactura(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    idCliente = idCliente
+                )
+                if (response.success) {
+                    onResult(true, response.message ?: "Factura generada con éxito", response.data)
+                } else {
+                    onResult(false, response.error ?: response.message ?: "Error al crear la factura", null)
+                }
+            } catch (e: Exception) {
+                onResult(false, e.message ?: "Error de red", null)
+            }
+        }
+    }
+
+    fun openFacturaDetail(factura: com.example.data.FacturaData?, isNew: Boolean = false) {
+        if (factura != null) {
+            _selectedFacturaDetail.value = Pair(factura, isNew)
+        } else {
+            _selectedFacturaDetail.value = null
+        }
+    }
+
+    private val _configCortesState = MutableStateFlow<UiState<com.example.data.ConfigCortesResponse>>(UiState.Loading)
+    val configCortesState: StateFlow<UiState<com.example.data.ConfigCortesResponse>> = _configCortesState.asStateFlow()
+
+    fun loadConfigCortes() {
+        viewModelScope.launch {
+            _configCortesState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getConfigCortes(
+                    token = config.token,
+                    subdominio = config.subdominio
+                )
+                if (response.success) {
+                    _configCortesState.value = UiState.Success(response)
+                } else {
+                    _configCortesState.value = UiState.Error(response.error ?: "Error al obtener configuración de cortes")
+                }
+            } catch (e: Exception) {
+                _configCortesState.value = UiState.Error(e.message ?: "Error de red")
+            }
+        }
+    }
+
+    fun updateConfigCortes(activo: Int?, horaEjecucion: String?, diasGracia: Int?) {
+        viewModelScope.launch {
+            _configCortesState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.updateConfigCortes(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    activo = activo,
+                    horaEjecucion = horaEjecucion,
+                    diasGracia = diasGracia
+                )
+                if (response.success) {
+                    _configCortesState.value = UiState.Success(response)
+                } else {
+                    _configCortesState.value = UiState.Error(response.error ?: "Error al actualizar configuración de cortes")
+                }
+            } catch (e: Exception) {
+                _configCortesState.value = UiState.Error(e.message ?: "Error de red")
+            }
+        }
+    }
+
+    private val _configAutomatizacionState = MutableStateFlow<UiState<com.example.data.ConfigAutomatizacionResponse>>(UiState.Loading)
+    val configAutomatizacionState: StateFlow<UiState<com.example.data.ConfigAutomatizacionResponse>> = _configAutomatizacionState.asStateFlow()
+
+    fun loadConfigAutomatizacion() {
+        viewModelScope.launch {
+            _configAutomatizacionState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getConfigAutomatizacion(
+                    token = config.token,
+                    subdominio = config.subdominio
+                )
+                if (response.success) {
+                    _configAutomatizacionState.value = UiState.Success(response)
+                } else {
+                    _configAutomatizacionState.value = UiState.Error(response.error ?: "Error al obtener configuración de automatización")
+                }
+            } catch (e: Exception) {
+                _configAutomatizacionState.value = UiState.Error(e.message ?: "Error de red")
+            }
+        }
+    }
+
+    fun updateConfigAutomatizacion(
+        statsMikrotikActivo: Int?,
+        monitorTraficoActivo: Int?,
+        recordatorioPagoActivo: Int?,
+        recordatorioCorteActivo: Int?,
+        reporteDiarioActivo: Int?
+    ) {
+        viewModelScope.launch {
+            _configAutomatizacionState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.updateConfigAutomatizacion(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    statsMikrotikActivo = statsMikrotikActivo,
+                    monitorTraficoActivo = monitorTraficoActivo,
+                    recordatorioPagoActivo = recordatorioPagoActivo,
+                    recordatorioCorteActivo = recordatorioCorteActivo,
+                    reporteDiarioActivo = reporteDiarioActivo
+                )
+                if (response.success) {
+                    _configAutomatizacionState.value = UiState.Success(response)
+                } else {
+                    _configAutomatizacionState.value = UiState.Error(response.error ?: "Error al actualizar configuración de automatización")
+                }
+            } catch (e: Exception) {
+                _configAutomatizacionState.value = UiState.Error(e.message ?: "Error de red")
+            }
+        }
+    }
+
 }

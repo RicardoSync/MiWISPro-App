@@ -4,30 +4,56 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.Client
+import com.example.data.ConsumoClienteResponse
+import com.example.data.DeudaResponse
+import com.example.data.FacturaDetalle
 import com.example.ui.theme.*
 import com.example.ui.viewmodel.ClientViewModel
 import com.example.ui.viewmodel.UiState
+import kotlin.math.max
+
+enum class ClientTab { INFO, CONSUMO, DEUDAS }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,383 +64,383 @@ fun ClientDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var detailState by remember(client.id) { mutableStateOf<UiState<Client>>(UiState.Loading) }
+    var currentTab by remember { mutableStateOf(ClientTab.INFO) }
 
-    // Fetch fresh details with full speed specs from real-time API upon screen load
+    var detailState by remember(client.id) { mutableStateOf<UiState<Client>>(UiState.Loading) }
+    var deudaState by remember(client.id) { mutableStateOf<UiState<DeudaResponse>>(UiState.Loading) }
+    var consumoState by remember(client.id) { mutableStateOf<UiState<ConsumoClienteResponse>>(UiState.Loading) }
+
+    // Fetch details
     LaunchedEffect(client.id) {
-        viewModel.getClientDetailRemote(client.id) { state ->
-            detailState = state
-        }
+        viewModel.getClientDetailRemote(client.id) { state -> detailState = state }
+        viewModel.getConsumoClienteRemote(client.id) { state -> consumoState = state }
+        viewModel.getClientDeudaRemote(client.id) { state -> deudaState = state }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Perfil de Cliente",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
+            MediumTopAppBar(
+                title = { Text(client.nombreCompleto?.uppercase() ?: "PERFIL DE CLIENTE", fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
-                    IconButton(
-                        onClick = onBack,
-                        modifier = Modifier.testTag("detail_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "Regresar",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                    IconButton(onClick = onBack, modifier = Modifier.testTag("detail_back_button")) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Regresar")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                ),
-                modifier = Modifier.statusBarsPadding()
+                actions = {
+                    IconButton(onClick = {
+                        Toast.makeText(context, "Sincronizando...", Toast.LENGTH_SHORT).show()
+                        viewModel.syncMikrotikRemote(client.id) { success, message, detail ->
+                            val text = if (detail != null) "$message\n($detail)" else message
+                            Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+                        }
+                    }) {
+                        Icon(Icons.Rounded.Sync, contentDescription = "Sincronizar MikroTik")
+                    }
+                }
             )
         },
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(top = innerPadding.calculateTopPadding()) // Remove bottom padding for full scroll
         ) {
-            when (val state = detailState) {
-                is UiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(strokeWidth = 3.dp)
-                            Spacer(modifier = Modifier.height(16.dp))
+            // Elegant Tab Row
+            PrimaryTabRow(
+                selectedTabIndex = currentTab.ordinal,
+                containerColor = MaterialTheme.colorScheme.background
+            ) {
+                listOf(ClientTab.INFO to "General", ClientTab.CONSUMO to "Internet", ClientTab.DEUDAS to "Deudas").forEach { (tab, title) ->
+                    Tab(
+                        selected = currentTab == tab,
+                        onClick = { currentTab = tab },
+                        text = {
                             Text(
-                                "Descargando información en tiempo real...",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.secondary
+                                title,
+                                fontWeight = if (currentTab == tab) FontWeight.Bold else FontWeight.Medium
+                            )
+                        }
+                    )
+                }
+            }
+
+            // Crossfade with Spinner for smooth transitions between tabs and loading states
+            Crossfade(
+                targetState = currentTab,
+                animationSpec = tween(durationMillis = 300),
+                label = "tab_transition",
+                modifier = Modifier.fillMaxSize()
+            ) { selectedTab ->
+                when (selectedTab) {
+                    ClientTab.INFO -> AnimatedTabContent(detailState) { data ->
+                        ClientInfoTabContent(data, viewModel, context)
+                    }
+                    ClientTab.CONSUMO -> AnimatedTabContent(consumoState) { data ->
+                        ClientConsumoTabContent(data)
+                    }
+                    ClientTab.DEUDAS -> AnimatedTabContent(deudaState) { data ->
+                        ClientDeudasTabContent(client, data, context)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Helper to wrap UiState handling with a smooth Spinner
+ */
+@Composable
+fun <T> AnimatedTabContent(
+    state: UiState<T>,
+    onSuccess: @Composable (T) -> Unit
+) {
+    AnimatedContent(
+        targetState = state,
+        transitionSpec = { fadeIn(tween(400)) togetherWith fadeOut(tween(400)) },
+        label = "state_transition",
+        modifier = Modifier.fillMaxSize()
+    ) { targetState ->
+        when (targetState) {
+            is UiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary,
+                            strokeWidth = 4.dp,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Cargando información...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+                    }
+                }
+            }
+            is UiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Rounded.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(targetState.message, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
+                    }
+                }
+            }
+            is UiState.Success -> {
+                onSuccess(targetState.data)
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------------
+// TAB 1: INFO GENERAL (PROFILE REDESIGN)
+// -----------------------------------------------------------------------------------
+
+@Composable
+fun ClientInfoTabContent(
+    client: Client,
+    viewModel: ClientViewModel,
+    context: Context
+) {
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var showCrearFacturaDialog by remember { mutableStateOf(false) }
+    val isActive = client.estado != "cortado" && client.estado != "Cancelado"
+
+    if (showConfirmDialog) {
+        val actionText = if (isActive) "Suspender" else "Activar"
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text("Confirmar Acción") },
+            text = { Text("¿Estás seguro de que deseas $actionText al cliente ${client.nombreCompleto}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.toggleClientStatusRemote(client) { success, message ->
+                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                    }
+                    showConfirmDialog = false
+                }) { Text("Confirmar", color = MaterialTheme.colorScheme.primary) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    if (showCrearFacturaDialog) {
+        AlertDialog(
+            onDismissRequest = { showCrearFacturaDialog = false },
+            title = { Text("Generar Factura Manual") },
+            text = { Text("¿Deseas generar una factura manual para este cliente?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.crearFacturaManual(client.id) { success, message, data ->
+                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                        if (success && data != null) {
+                            // Map CrearFacturaData to FacturaData for the detail screen
+                            val facturaData = com.example.data.FacturaData(
+                                id = data.idFactura.toString(),
+                                idCliente = client.id,
+                                idPaquete = null,
+                                idServicioExtra = null,
+                                montoTotal = data.monto.toString(),
+                                montoPagado = "0.00",
+                                saldoPendiente = data.monto.toString(),
+                                fechaEmision = data.fechaEmision,
+                                fechaVencimiento = data.fechaVencimiento,
+                                estado = "pendiente",
+                                descripcion = data.descripcion,
+                                fechaCreacion = data.fechaEmision, // approximation
+                                nombreCliente = client.nombreCompleto,
+                                nombrePlan = client.nombrePaquete
+                            )
+                            viewModel.openFacturaDetail(facturaData, isNew = true)
+                        }
+                    }
+                    showCrearFacturaDialog = false
+                }) { Text("Generar", color = MaterialTheme.colorScheme.primary) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCrearFacturaDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 40.dp)
+    ) {
+        // --- HEADER SECTION ---
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Avatar Image
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Rounded.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "@cliente_${client.id}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Stats Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    ProfileStatItem(icon = Icons.Rounded.WifiTethering, value = client.tipoConexion ?: "Desconocido", label = "Conexión")
+                    ProfileStatItem(icon = Icons.Rounded.Speed, value = client.nombrePaquete ?: "Estándar", label = "Paquete")
+                }
+            }
+        }
+
+        // --- PERSONAL INFO GRID ---
+        item {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text("Información Personal", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp))
+                
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column {
+                        ListItem(
+                            headlineContent = { Text("Estado") },
+                            supportingContent = { Text(if (isActive) "Activo" else "Suspendido") },
+                            leadingContent = { Icon(Icons.Rounded.SignalCellularAlt, contentDescription = null, tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                        ListItem(
+                            headlineContent = { Text("Teléfono") },
+                            supportingContent = { Text(client.telefono ?: "N/D") },
+                            leadingContent = { Icon(Icons.Rounded.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                        ListItem(
+                            headlineContent = { Text("RFC / DNI") },
+                            supportingContent = { Text(client.dniRfc ?: "N/D") },
+                            leadingContent = { Icon(Icons.Rounded.Badge, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+                    }
+                }
+            }
+        }
+
+        // --- DYNAMIC SECTIONS (SETTINGS MENU) ---
+        item {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text("Configuraciones", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp))
+
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column {
+                        ListItem(
+                            headlineContent = { Text("Configuración IP") },
+                            supportingContent = { Text(client.ipAddress ?: client.ipCliente ?: "IP Dinámica") },
+                            leadingContent = { Icon(Icons.Rounded.Language, contentDescription = null) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                        ListItem(
+                            headlineContent = { Text("Ubicación en Mapa") },
+                            supportingContent = { Text(client.direccion ?: "Sin especificar") },
+                            leadingContent = { Icon(Icons.Rounded.Place, contentDescription = null) },
+                            trailingContent = { Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null) },
+                            modifier = Modifier.clickable {
+                                if (!client.coordenadas.isNullOrEmpty()) openGoogleMaps(context, client.coordenadas, client.nombreCompleto)
+                                else Toast.makeText(context, "Sin coordenadas guardadas", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+                        if (client.tipoConexion?.contains("pppoe", ignoreCase = true) == true) {
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                            ListItem(
+                                headlineContent = { Text("Credenciales PPPoE") },
+                                supportingContent = { Text("Usuario: ${client.pppoeUsuario ?: "-"}") },
+                                leadingContent = { Icon(Icons.Rounded.VpnKey, contentDescription = null) },
+                                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                             )
                         }
                     }
                 }
-                is UiState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(32.dp)
-                        ) {
-                            Icon(
-                                Icons.Rounded.CloudOff,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(64.dp)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                state.message,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.error,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(
-                                onClick = {
-                                    viewModel.getClientDetailRemote(client.id) { s ->
-                                        detailState = s
-                                    }
-                                },
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Reintentar Sincronización")
-                            }
-                        }
-                    }
+            }
+        }
+
+        // --- SETTINGS ---
+        item {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text("Acciones", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp))
+                
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (isActive) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    ListItem(
+                        headlineContent = { Text(if (isActive) "Suspender Servicio" else "Reactivar Servicio", fontWeight = FontWeight.Bold) },
+                        supportingContent = { Text("Cambiar estado de conexión") },
+                        leadingContent = { Icon(if (isActive) Icons.Rounded.Block else Icons.Rounded.CheckCircle, contentDescription = null) },
+                        trailingContent = { Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null) },
+                        modifier = Modifier.clickable { showConfirmDialog = true },
+                        colors = ListItemDefaults.colors(
+                            containerColor = Color.Transparent,
+                            headlineColor = if (isActive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+                            supportingColor = if (isActive) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                            leadingIconColor = if (isActive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+                            trailingIconColor = if (isActive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
                 }
-                is UiState.Success -> {
-                    val fetchedClient = state.data
-                    val isActive = fetchedClient.activo == 1
 
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(bottom = 32.dp)
-                    ) {
-                        item {
-                            // Dynamic Customer Profile Header Banner with beautiful layout and status
-                            Card(
-                                shape = RoundedCornerShape(24.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isActive) GreenBadgeBg else RedBadgeBg
-                                ),
-                                modifier = Modifier.fillMaxWidth(),
-                                border = BorderStroke(
-                                    width = 1.dp,
-                                    color = (if (isActive) GreenBadgeText else RedBadgeText).copy(alpha = 0.2f)
-                                )
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(20.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(99.dp))
-                                                .background(if (isActive) GreenBadgeText.copy(alpha = 0.1f) else RedBadgeText.copy(alpha = 0.1f))
-                                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(8.dp)
-                                                        .background(if (isActive) GreenBadgeText else RedBadgeText, CircleShape)
-                                                )
-                                                Text(
-                                                    text = if (isActive) "CONEXIÓN ACTIVA" else "CONEXIÓN SUSPENDIDA",
-                                                    color = if (isActive) GreenBadgeText else RedBadgeText,
-                                                    style = MaterialTheme.typography.labelMedium,
-                                                    fontWeight = FontWeight.Black
-                                                )
-                                            }
-                                        }
+                Spacer(modifier = Modifier.height(12.dp))
 
-                                        Box(
-                                            modifier = Modifier
-                                                .size(36.dp)
-                                                .background(MaterialTheme.colorScheme.surface, CircleShape),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Person,
-                                                contentDescription = null,
-                                                tint = if (isActive) GreenBadgeText else RedBadgeText,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                    
-                                    Spacer(modifier = Modifier.height(14.dp))
-                                    
-                                    Text(
-                                        text = fetchedClient.nombreCompleto?.uppercase() ?: "SIN NOMBRE REGISTRADO",
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = if (isActive) GreenBadgeText else RedBadgeText,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-
-                        // Block 1: Connection configurations
-                        item {
-                            Card(
-                                shape = RoundedCornerShape(24.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.8f)),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(18.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            Icons.Rounded.SettingConnection,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            "Credenciales del Router & MikroTik",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(14.dp))
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    
-                                    DetailPropertyRow("Tipo de Conexión", fetchedClient.tipoConexion?.uppercase() ?: "ESTÁTICA")
-                                    if (fetchedClient.tipoConexion?.contains("pppoe", ignoreCase = true) == true) {
-                                        DetailPropertyRow("Usuario PPPoE", fetchedClient.pppoeUsuario ?: "-")
-                                        DetailPropertyRow("Contraseña PPPoE", fetchedClient.pppoePassword ?: "-")
-                                    }
-                                    DetailPropertyRow("Segmento / Gateway IP", fetchedClient.ipAddress ?: fetchedClient.ipCliente ?: "-")
-                                    DetailPropertyRow("Puerto de Comunicación", fetchedClient.puertoApi?.toString() ?: "8729")
-                                    
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    DetailPropertyRow("Velocidad de Bajada", fetchedClient.velocidadBajada ?: "Sin Configurar")
-                                    DetailPropertyRow("Velocidad de Subida", fetchedClient.velocidadSubida ?: "Sin Configurar")
-                                    DetailPropertyRow("Límite de Ráfaga", fetchedClient.burstLimit ?: "0/0")
-                                }
-                            }
-                        }
-
-                        // Block 2: Fiscal and Comercial Detail
-                        item {
-                            Card(
-                                shape = RoundedCornerShape(24.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.8f)),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(18.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            Icons.Rounded.Payments,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            "Paquetes de Internet & Cobros",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(14.dp))
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                                    Spacer(modifier = Modifier.height(12.dp))
-
-                                    val currentDues = fetchedClient.saldoActual?.toDoubleOrNull() ?: 0.0
-                                    DetailPropertyRow("Monto por Cobrar", "$${fetchedClient.saldoActual ?: "0.00"} MXN", isHighlighted = currentDues > 0)
-                                    DetailPropertyRow("Día de Corte Mensual", "Día ${fetchedClient.diaCorte ?: "30"} de cada mes")
-                                    DetailPropertyRow("Siguiente Fecha de Vencimiento", fetchedClient.proximoPago ?: "-")
-                                    
-                                    if (!fetchedClient.promesaPagoHasta.isNullOrEmpty()) {
-                                        DetailPropertyRow("Fecha Límite Pago Promesa", fetchedClient.promesaPagoHasta, isWarning = true)
-                                    }
-
-                                    DetailPropertyRow("Paquete Base", fetchedClient.nombrePaquete ?: "-")
-                                    DetailPropertyRow("Precio del Plan", "$${fetchedClient.precioPaquete ?: "0"} MXN")
-                                    
-                                    if (fetchedClient.nombreServicio != null) {
-                                        DetailPropertyRow("Servicios Adicionales", "${fetchedClient.nombreServicio} ($${fetchedClient.precioServicio ?: "0"} MXN)")
-                                    }
-                                }
-                            }
-                        }
-
-                        // Block 3: Personal identity details
-                        item {
-                            Card(
-                                shape = RoundedCornerShape(24.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.8f)),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(18.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            Icons.Rounded.Badge,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            "Información del Titular",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(14.dp))
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                                    Spacer(modifier = Modifier.height(12.dp))
-
-                                    DetailPropertyRow("ID de Registro", fetchedClient.id)
-                                    DetailPropertyRow("DNI / RFC", fetchedClient.dniRfc ?: "SIN_RFC")
-                                    DetailPropertyRow("Teléfono", fetchedClient.telefono ?: "Sin teléfono")
-                                    DetailPropertyRow("Dirección Física", fetchedClient.direccion ?: "Sin especificar")
-                                    DetailPropertyRow("Filtro Contenidos", if (fetchedClient.filtroAdultos == 1) "ACTIVO" else "DESACTIVADO")
-                                }
-                            }
-                        }
-
-                        // GPS Maps Launcher Button
-                        if (!fetchedClient.coordenadas.isNullOrEmpty()) {
-                            item {
-                                Button(
-                                    onClick = { openGoogleMapsFromDetail(context, fetchedClient.coordenadas, fetchedClient.nombreCompleto) },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(48.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = BlueBadgeBg,
-                                        contentColor = BlueBadgeText
-                                    ),
-                                    border = BorderStroke(1.dp, BlueBadgeText.copy(alpha = 0.2f)),
-                                    elevation = ButtonDefaults.buttonElevation(0.dp)
-                                ) {
-                                    Icon(Icons.Rounded.LocationOn, contentDescription = null, modifier = Modifier.size(20.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Ubicar en Google Maps", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                                }
-                            }
-                        }
-
-                        // Core Toggle Status Button (Keeps suspension or activation toggler live)
-                        item {
-                            Button(
-                                onClick = {
-                                    viewModel.toggleClientStatusRemote(fetchedClient) { success, message ->
-                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                                        if (success) {
-                                            // Update details instantly on screen
-                                            viewModel.getClientDetailRemote(fetchedClient.id) { stateResult ->
-                                                detailState = stateResult
-                                            }
-                                        }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(52.dp)
-                                    .testTag("detail_action_toggle_${fetchedClient.id}"),
-                                shape = RoundedCornerShape(14.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isActive) RedBadgeBg else GreenBadgeBg,
-                                    contentColor = if (isActive) RedBadgeText else GreenBadgeText
-                                ),
-                                border = BorderStroke(1.dp, (if (isActive) RedBadgeText else GreenBadgeText).copy(alpha = 0.3f)),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (isActive) Icons.Rounded.Block else Icons.Rounded.CheckCircle,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = if (isActive) "SUSPENDER CONEXIÓN" else "ACTIVAR CONEXIÓN",
-                                    fontWeight = FontWeight.Black,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-                    }
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    ListItem(
+                        headlineContent = { Text("Generar Factura Manual", fontWeight = FontWeight.Bold) },
+                        supportingContent = { Text("Crear un recibo o premisa nueva") },
+                        leadingContent = { Icon(Icons.Rounded.Receipt, contentDescription = null) },
+                        trailingContent = { Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null) },
+                        modifier = Modifier.clickable { showCrearFacturaDialog = true },
+                        colors = ListItemDefaults.colors(
+                            containerColor = Color.Transparent,
+                            headlineColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            supportingColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
+                            leadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            trailingIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    )
                 }
             }
         }
@@ -422,49 +448,425 @@ fun ClientDetailScreen(
 }
 
 @Composable
-fun DetailPropertyRow(label: String, value: String, isHighlighted: Boolean = false, isWarning: Boolean = false) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            fontWeight = FontWeight.Medium
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = when {
-                isHighlighted -> RedBadgeText
-                isWarning -> OrangeBadgeText
-                else -> MaterialTheme.colorScheme.onSurface
-            }
-        )
+fun ProfileStatItem(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+            Text(value.uppercase(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        }
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
     }
 }
 
-private fun openGoogleMapsFromDetail(context: Context, coordenadas: String, nombre: String?) {
+
+
+private fun openGoogleMaps(context: Context, coordenadas: String, nombre: String?) {
     try {
         val geoUri = "geo:$coordenadas?q=$coordenadas(${Uri.encode(nombre ?: "Cliente")})"
         val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse(geoUri))
         mapIntent.setPackage("com.google.android.apps.maps")
-        if (mapIntent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(mapIntent)
-        } else {
-            val webUri = "https://www.google.com/maps/search/?api=1&query=$coordenadas"
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webUri)))
-        }
+        if (mapIntent.resolveActivity(context.packageManager) != null) context.startActivity(mapIntent)
+        else context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=$coordenadas")))
     } catch (e: Exception) {
-        Toast.makeText(context, "Imposible abrir mapas: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Imposible abrir mapas", Toast.LENGTH_SHORT).show()
     }
 }
 
-// Icon fallbacks specifically for router settings or payment indicators
-private val Icons.Rounded.SettingConnection: androidx.compose.ui.graphics.vector.ImageVector
-    get() = Icons.Rounded.SettingsInputComponent
+// -----------------------------------------------------------------------------------
+// TAB 2: CONSUMO (BAR CHART & RING)
+// -----------------------------------------------------------------------------------
+
+data class ConsumoIntervalo(
+    val fecha: String,
+    val downMbps: Float,
+    val upMbps: Float,
+    val downBytes: Long,
+    val upBytes: Long
+)
+
+@Composable
+fun ClientConsumoTabContent(
+    response: ConsumoClienteResponse
+) {
+    val history = response.data ?: emptyList()
+    
+    Column(modifier = Modifier.fillMaxSize()) {
+        if (history.size < 2) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text("Datos insuficientes para calcular velocidad.", color = MaterialTheme.colorScheme.secondary)
+            }
+            return
+        }
+
+        // --- CÁLCULO DE MBPS ---
+        val dataPoints = history.sortedBy { it.fecha }
+        val intervalData = mutableListOf<ConsumoIntervalo>()
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+
+        for (i in 1 until dataPoints.size) {
+            val prev = dataPoints[i - 1]
+            val curr = dataPoints[i]
+
+            val downDiff = (curr.downloadBytes ?: 0) - (prev.downloadBytes ?: 0)
+            val upDiff = (curr.uploadBytes ?: 0) - (prev.uploadBytes ?: 0)
+
+            val safeDownDiff = if (downDiff < 0) 0L else downDiff
+            val safeUpDiff = if (upDiff < 0) 0L else upDiff
+
+            val prevTime = sdf.parse(prev.fecha ?: "")?.time ?: 0L
+            val currTime = sdf.parse(curr.fecha ?: "")?.time ?: 0L
+            
+            var seconds = (currTime - prevTime) / 1000
+            if (seconds <= 0) seconds = 300 // default 5 min
+            
+            val downMbps = (safeDownDiff * 8f) / (seconds * 1_000_000f)
+            val upMbps = (safeUpDiff * 8f) / (seconds * 1_000_000f)
+
+            intervalData.add(ConsumoIntervalo(curr.fecha ?: "", downMbps, upMbps, safeDownDiff, safeUpDiff))
+        }
+
+        val maxSpeed = max(1f, intervalData.maxOfOrNull { it.downMbps } ?: 1f)
+        val currentSpeed = intervalData.lastOrNull()?.downMbps ?: 0f
+        // Calculamos el pico para mostrarlo en lugar del promedio aritmético bajo
+        val displaySpeed = maxSpeed
+        val scorePercent = (displaySpeed / maxSpeed).coerceIn(0f, 1f)
+
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 24.dp),
+            contentPadding = PaddingValues(bottom = 40.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // --- RING PROGRESS INDICATOR ---
+            item {
+                Card(
+                    shape = RoundedCornerShape(32.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Pico del Periodo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(160.dp)) {
+                            CircularProgressIndicator(
+                                progress = { 1f },
+                                modifier = Modifier.fillMaxSize(),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                strokeWidth = 16.dp,
+                                strokeCap = StrokeCap.Round
+                            )
+                            CircularProgressIndicator(
+                                progress = { scorePercent },
+                                modifier = Modifier.fillMaxSize(),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 16.dp,
+                                strokeCap = StrokeCap.Round
+                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(String.format("%.1f", displaySpeed), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                                Text("Mbps Max", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- LINE CHART (CANVAS) ---
+            item {
+                Card(
+                    shape = RoundedCornerShape(32.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha=0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Text("Historial (Mbps)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        val primaryColor = MaterialTheme.colorScheme.primary
+                        val gradientColors = listOf(primaryColor.copy(alpha = 0.5f), Color.Transparent)
+                        
+                        val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+                        val secondaryColor = MaterialTheme.colorScheme.secondary
+
+                        // NATIVE COMPOSE CANVAS LINE CHART
+                        Canvas(modifier = Modifier.fillMaxWidth().height(250.dp).padding(start = 16.dp, bottom = 16.dp)) {
+                            val width = size.width
+                            val height = size.height
+                            
+                            val stepX = width / max(1, intervalData.size - 1)
+                            val points = intervalData.mapIndexed { index, data ->
+                                val x = index * stepX
+                                val y = height - ((data.downMbps / maxSpeed) * height)
+                                Offset(x, y)
+                            }
+
+                            if (points.isNotEmpty()) {
+                                val path = androidx.compose.ui.graphics.Path()
+                                val fillPath = androidx.compose.ui.graphics.Path()
+                                
+                                path.moveTo(points.first().x, points.first().y)
+                                fillPath.moveTo(points.first().x, height)
+                                fillPath.lineTo(points.first().x, points.first().y)
+
+                                // Cubic Bezier for smooth curves
+                                for (i in 1 until points.size) {
+                                    val prev = points[i - 1]
+                                    val curr = points[i]
+                                    val controlX = (prev.x + curr.x) / 2
+                                    path.cubicTo(controlX, prev.y, controlX, curr.y, curr.x, curr.y)
+                                    fillPath.cubicTo(controlX, prev.y, controlX, curr.y, curr.x, curr.y)
+                                }
+                                
+                                fillPath.lineTo(points.last().x, height)
+                                fillPath.close()
+
+                                // Relleno degradado
+                                drawPath(
+                                    path = fillPath,
+                                    brush = Brush.verticalGradient(colors = gradientColors, startY = 0f, endY = height)
+                                )
+
+                                // Línea Principal
+                                drawPath(
+                                    path = path,
+                                    color = primaryColor,
+                                    style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
+                                )
+                            }
+
+                            // Línea base
+                            drawLine(
+                                color = Color.LightGray.copy(alpha = 0.5f),
+                                start = Offset(0f, height),
+                                end = Offset(width, height),
+                                strokeWidth = 2f
+                            )
+                            
+                            // Y-Axis Labels
+                            drawContext.canvas.nativeCanvas.apply {
+                                val paint = android.graphics.Paint().apply {
+                                    color = android.graphics.Color.argb(
+                                        (secondaryColor.alpha * 255).toInt(),
+                                        (secondaryColor.red * 255).toInt(),
+                                        (secondaryColor.green * 255).toInt(),
+                                        (secondaryColor.blue * 255).toInt()
+                                    )
+                                    textSize = 12.dp.toPx()
+                                    textAlign = android.graphics.Paint.Align.RIGHT
+                                    isAntiAlias = true
+                                }
+                                
+                                val maxLabel = String.format("%.1f Mbps", maxSpeed)
+                                drawText(maxLabel, -10f, 20f, paint)
+                                
+                                val midLabel = String.format("%.1f Mbps", maxSpeed / 2)
+                                drawText(midLabel, -10f, height / 2 + 10f, paint)
+                                
+                                drawText("0 Mbps", -10f, height + 5f, paint)
+                            }
+                            
+                            // X-Axis Labels (Time)
+                            drawContext.canvas.nativeCanvas.apply {
+                                val paint = android.graphics.Paint().apply {
+                                    color = android.graphics.Color.argb(
+                                        (secondaryColor.alpha * 255).toInt(),
+                                        (secondaryColor.red * 255).toInt(),
+                                        (secondaryColor.green * 255).toInt(),
+                                        (secondaryColor.blue * 255).toInt()
+                                    )
+                                    textSize = 10.dp.toPx()
+                                    textAlign = android.graphics.Paint.Align.CENTER
+                                    isAntiAlias = true
+                                }
+                                
+                                if (intervalData.isNotEmpty()) {
+                                    val firstTime = formatDate(intervalData.first().fecha).substringAfter(", ")
+                                    val lastTime = formatDate(intervalData.last().fecha).substringAfter(", ")
+                                    val midTime = formatDate(intervalData[intervalData.size / 2].fecha).substringAfter(", ")
+                                    
+                                    drawText(firstTime, 0f, height + 40f, paint.apply { textAlign = android.graphics.Paint.Align.LEFT })
+                                    drawText(midTime, width / 2, height + 40f, paint.apply { textAlign = android.graphics.Paint.Align.CENTER })
+                                    drawText(lastTime, width, height + 40f, paint.apply { textAlign = android.graphics.Paint.Align.RIGHT })
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- LISTADO DE DETALLE (RECYCLERVIEW) ---
+            item {
+                Text("Detalle de Tráfico", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top=16.dp))
+            }
+            
+            items(intervalData.reversed()) { item ->
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha=0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(formatDate(item.fecha), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            
+                            val totalBytes = item.downBytes + item.upBytes
+                            Text(formatBytes(totalBytes), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                            // Download
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = GreenBadgeText, modifier = Modifier.size(16.dp))
+                                Text(formatBytes(item.downBytes), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = GreenBadgeText)
+                            }
+                            // Upload
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = BlueBadgeText, modifier = Modifier.size(16.dp))
+                                Text(formatBytes(item.upBytes), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = BlueBadgeText)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Helpers
+private fun formatBytes(bytes: Long): String {
+    val kb = 1024.0
+    val mb = kb * 1024.0
+    val gb = mb * 1024.0
+    return when {
+        bytes >= gb -> String.format("%.2f GB", bytes / gb)
+        bytes >= mb -> String.format("%.2f MB", bytes / mb)
+        bytes >= kb -> String.format("%.2f KB", bytes / kb)
+        else -> "$bytes B"
+    }
+}
+
+private fun formatDate(dateStr: String): String {
+    try {
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+        val date = sdf.parse(dateStr) ?: return dateStr
+        val outSdf = java.text.SimpleDateFormat("dd MMM, HH:mm", java.util.Locale.getDefault())
+        return outSdf.format(date)
+    } catch (e: Exception) {
+        return dateStr
+    }
+}
+
+// -----------------------------------------------------------------------------------
+// TAB 3: ESTADO DE CUENTA
+// -----------------------------------------------------------------------------------
+
+@Composable
+fun ClientDeudasTabContent(client: Client, data: DeudaResponse, context: Context) {
+    val deudaData = data.data
+    if (deudaData == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("¡Sin Deudas Pendientes!", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+        }
+        return
+    }
+
+    val totalAPagar = deudaData.totalAPagar ?: "0.00"
+    val isMoroso = deudaData.estadoServicio?.contains("moroso", ignoreCase = true) == true || (totalAPagar.toDoubleOrNull() ?: 0.0) > 0
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+        contentPadding = PaddingValues(top = 24.dp, bottom = 40.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Card(
+                shape = RoundedCornerShape(32.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isMoroso) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "TOTAL A PAGAR",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isMoroso) MaterialTheme.colorScheme.onErrorContainer.copy(alpha=0.8f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha=0.8f)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "$$totalAPagar",
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.Black,
+                        color = if (isMoroso) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+
+        val bills = deudaData.detalleFacturas ?: emptyList()
+        val sortedBills = bills.sortedByDescending { it.idFactura ?: 0 }
+        if (sortedBills.isNotEmpty()) {
+            item {
+                Text("Historial de Facturas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top=16.dp))
+            }
+            items(sortedBills) { bill ->
+                val estado = bill.estado?.lowercase() ?: "pendiente"
+                
+                val cardColor = when {
+                    estado.contains("pagado") -> Color(0xFFE8F5E9)
+                    estado.contains("pendiente") -> Color(0xFFFFF3E0)
+                    estado.contains("vencida") -> MaterialTheme.colorScheme.errorContainer
+                    estado.contains("anulada") -> Color(0xFFF5F5F5)
+                    else -> MaterialTheme.colorScheme.surface
+                }
+                
+                val textColor = when {
+                    estado.contains("pagado") -> Color(0xFF2E7D32)
+                    estado.contains("pendiente") -> Color(0xFFEF6C00)
+                    estado.contains("vencida") -> MaterialTheme.colorScheme.error
+                    estado.contains("anulada") -> Color.Gray
+                    else -> MaterialTheme.colorScheme.primary
+                }
+
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = cardColor),
+                    border = BorderStroke(1.dp, textColor.copy(alpha=0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(bill.descripcion ?: "Internet", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(textColor.copy(alpha = 0.1f))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    (bill.estado ?: "Pendiente").uppercase(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Black,
+                                    color = textColor
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(Icons.Rounded.Event, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
+                                Text("Vence: ${bill.fechaVencimiento ?: "-"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                            }
+                            Text("$${bill.montoPendiente ?: "0.00"}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Black, color = textColor)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

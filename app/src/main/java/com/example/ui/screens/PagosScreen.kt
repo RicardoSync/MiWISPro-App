@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import android.widget.Toast
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,6 +29,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.data.Client
 import com.example.ui.viewmodel.ClientViewModel
 import com.example.ui.viewmodel.PaymentRecord
+import com.example.ui.viewmodel.UiState
 import com.example.ui.theme.*
 import androidx.compose.foundation.BorderStroke
 import java.text.SimpleDateFormat
@@ -44,10 +46,27 @@ fun PagosScreen(
     val clientsList by viewModel.clientsList.collectAsState()
 
     var showAddPaymentDialog by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     // Computations
     val totalCollected = payments.sumOf { it.amount }
     val txCount = payments.size
+
+    val filteredPayments = remember(payments, searchQuery) {
+        val result = payments.filter { payment ->
+            val nameMatch = payment.clientName.contains(searchQuery, ignoreCase = true)
+            val dateMatch = payment.date.contains(searchQuery, ignoreCase = true)
+            searchQuery.isEmpty() || nameMatch || dateMatch
+        }.sortedByDescending { it.date + it.id }
+        
+        Log.d("PagosScreen", "Filtro aplicado: '$searchQuery' | Pagos encontrados: ${result.size}")
+        result
+    }
+
+    val metodosState by viewModel.metodosPagoState.collectAsState()
+    LaunchedEffect(Unit) {
+        viewModel.loadMetodosPago()
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -132,9 +151,29 @@ fun PagosScreen(
                 color = MaterialTheme.colorScheme.primary
             )
 
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Buscar por nombre o fecha...") },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = "Buscar") },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Rounded.Close, contentDescription = "Limpiar")
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .testTag("pago_search_input"),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (payments.isEmpty()) {
+            if (filteredPayments.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .weight(1.0f)
@@ -164,7 +203,7 @@ fun PagosScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = 80.dp) // Height for FAB clearance
                 ) {
-                    items(payments) { payment ->
+                    items(filteredPayments) { payment ->
                         PaymentItemRow(payment = payment)
                     }
                 }
@@ -175,6 +214,12 @@ fun PagosScreen(
     if (showAddPaymentDialog) {
         AddPaymentDialog(
             clients = clientsList,
+            paymentMethods = if (metodosState is UiState.Success) {
+                val response = (metodosState as UiState.Success<com.example.data.MetodosPagoResponse>).data
+                response.data?.filter { m: com.example.data.MetodoPagoData -> m.activo == 1 }?.map { m: com.example.data.MetodoPagoData -> m.nombre ?: "Método" } ?: listOf("Efectivo")
+            } else {
+                listOf("Cargando...", "Efectivo")
+            },
             onDismiss = { showAddPaymentDialog = false },
             onSave = { selectedClient, amount, method, concept ->
                 // Proceed to update client saldo
@@ -281,6 +326,7 @@ fun PaymentItemRow(payment: PaymentRecord) {
 @Composable
 fun AddPaymentDialog(
     clients: List<Client>,
+    paymentMethods: List<String>,
     onDismiss: () -> Unit,
     onSave: (Client, Double, String, String) -> Unit
 ) {
@@ -390,8 +436,7 @@ fun AddPaymentDialog(
                         .padding(vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    val methods = listOf("Efectivo", "Transferencia", "Tarjeta")
-                    methods.forEach { method ->
+                    paymentMethods.take(3).forEach { method ->
                         FilterChip(
                             selected = selectedMethod == method,
                             onClick = { selectedMethod = method },

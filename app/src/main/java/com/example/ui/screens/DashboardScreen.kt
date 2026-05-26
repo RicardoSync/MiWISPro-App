@@ -49,16 +49,17 @@ fun DashboardScreen(
     val configState by viewModel.appConfig.collectAsState()
     val context = LocalContext.current
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // App header with credentials branding
-        DashboardHeader(
-            subdomain = configState.subdominio,
-            onRefresh = { viewModel.loadDashboard() }
-        )
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+        // Header has been removed as requested
 
         when (val state = dashboardState) {
             is UiState.Loading -> {
@@ -163,6 +164,7 @@ fun DashboardScreen(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -210,6 +212,7 @@ fun DashboardContent(
     context: Context
 ) {
     var selectedSection by remember { mutableStateOf(DashboardSectionTab.Pagos) }
+    var showIncome by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier
@@ -217,14 +220,14 @@ fun DashboardContent(
             .testTag("dashboard_scroll"),
         contentPadding = PaddingValues(bottom = 24.dp, start = 16.dp, end = 16.dp)
     ) {
-        // 1. Principal Income Card with beautiful gradients
         item {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp)
                     .testTag("kpi_income_card"),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Unspecified)
             ) {
                 Box(
@@ -233,15 +236,14 @@ fun DashboardContent(
                         .background(
                             Brush.linearGradient(
                                 colors = listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
-                                    MaterialTheme.colorScheme.tertiary
+                                    Color(0xFF0F9D58),
+                                    Color(0xFF0B8043)
                                 )
                             )
                         )
                         .padding(20.dp)
                 ) {
-                    Column {
+                    Column(modifier = Modifier.clickable { showIncome = !showIncome }) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -255,7 +257,7 @@ fun DashboardContent(
                                 letterSpacing = 1.2.sp
                             )
                             Icon(
-                                imageVector = Icons.Rounded.Paid,
+                                imageVector = if (showIncome) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.82f),
                                 modifier = Modifier.size(22.dp)
@@ -264,8 +266,9 @@ fun DashboardContent(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
+                        val displayTotal = if (showIncome) "$${data.ingresosMes ?: "0.00"}" else "$****"
                         Text(
-                            text = "$${data.ingresosMes ?: "0.00"}",
+                            text = displayTotal,
                             style = MaterialTheme.typography.displayMedium,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onPrimary,
@@ -436,9 +439,11 @@ fun KpiCard(
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
-    ElevatedCard(
+    Card(
         modifier = modifier.height(100.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
     ) {
         Column(
             modifier = Modifier
@@ -505,42 +510,53 @@ fun SectionChip(
 
 @Composable
 fun PagoRowCard(pago: UltimoPago) {
-    ElevatedCard(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
     ) {
-        ListItem(
-            headlineContent = {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(Color(0xFF4CAF50).copy(alpha = 0.2f), shape = RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF4CAF50)
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = pago.nombreCompleto ?: "Cliente Anónimo",
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            },
-            supportingContent = {
-                Text(text = pago.fechaPago ?: "Desconocido")
-            },
-            leadingContent = {
-                Icon(
-                    imageVector = Icons.Rounded.CheckCircle,
-                    contentDescription = null,
-                    tint = Color(0xFF4CAF50),
-                    modifier = Modifier.size(32.dp)
-                )
-            },
-            trailingContent = {
                 Text(
-                    text = "+$${pago.montoPagado ?: "0.00"}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Black,
-                    color = Color(0xFF4CAF50)
+                    text = pago.fechaPago ?: "Desconocido",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
                 )
-            },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-        )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "+$${pago.montoPagado ?: "0.00"}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Black,
+                color = Color(0xFF4CAF50)
+            )
+        }
     }
 }
 
@@ -549,57 +565,68 @@ fun VencimientoRowCard(
     vencer: ProximoVencer,
     context: Context
 ) {
-    ElevatedCard(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
     ) {
-        ListItem(
-            headlineContent = {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Event,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = vencer.nombreCompleto ?: "Cliente",
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            },
-            supportingContent = {
-                Text(text = "Plan: ${vencer.nombrePlan ?: "N/A"} • Vence: ${vencer.proximoPago ?: "N/D"}")
-            },
-            leadingContent = {
-                Icon(
-                    imageVector = Icons.Rounded.Event,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(32.dp)
+                Text(
+                    text = "Plan: ${vencer.nombrePlan ?: "N/A"} • Vence: ${vencer.proximoPago ?: "N/D"}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
                 )
-            },
-            trailingContent = {
-                val phone = vencer.telefono ?: ""
-                if (phone.isNotEmpty()) {
-                    IconButton(
-                        onClick = {
-                            val originalMsg = "Hola ${vencer.nombreCompleto}, te recordamos que tu próximo pago del servicio de Internet con plan ${vencer.nombrePlan} vence el día ${vencer.proximoPago} con un costo de $${vencer.precio}. Gracias por tu preferencia!"
-                            try {
-                                val uri = Uri.parse("https://api.whatsapp.com/send?phone=52$phone&text=${Uri.encode(originalMsg)}")
-                                val intent = Intent(Intent.ACTION_VIEW, uri)
-                                context.startActivity(intent)
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "No se pudo abrir WhatsApp: ${e.message}", Toast.LENGTH_SHORT).show()
-                            }
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            val phone = vencer.telefono ?: ""
+            if (phone.isNotEmpty()) {
+                IconButton(
+                    onClick = {
+                        val originalMsg = "Hola ${vencer.nombreCompleto}, te recordamos que tu próximo pago del servicio de Internet con plan ${vencer.nombrePlan} vence el día ${vencer.proximoPago} con un costo de $${vencer.precio}. Gracias por tu preferencia!"
+                        try {
+                            val uri = Uri.parse("https://api.whatsapp.com/send?phone=52$phone&text=${Uri.encode(originalMsg)}")
+                            val intent = Intent(Intent.ACTION_VIEW, uri)
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "No se pudo abrir WhatsApp: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.Message,
-                            contentDescription = "Contactar",
-                            tint = Color(0xFF4CAF50)
-                        )
                     }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.Message,
+                        contentDescription = "Contactar",
+                        tint = Color(0xFF4CAF50)
+                    )
                 }
-            },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-        )
+            }
+        }
     }
 }
 
@@ -608,47 +635,55 @@ fun DeudaRowCard(
     deuda: ClienteDeuda,
     context: Context
 ) {
-    ElevatedCard(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
     ) {
         Column {
-            ListItem(
-                headlineContent = {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ReportProblem,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = deuda.nombreCompleto ?: "Cliente",
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                },
-                supportingContent = {
                     Text(
                         text = "Atraso: ${deuda.mesesDeuda ?: 0} meses",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.SemiBold
                     )
-                },
-                leadingContent = {
-                    Icon(
-                        imageVector = Icons.Rounded.ReportProblem,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(32.dp)
-                    )
-                },
-                trailingContent = {
-                    Text(
-                        text = "$${deuda.saldoActual ?: "0.00"}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-            )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "$${deuda.saldoActual ?: "0.00"}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
@@ -702,8 +737,9 @@ fun DistributionPanel(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
     ) {
         Column(
@@ -806,7 +842,8 @@ fun LoadingEmptyCard(hintText: String) {
             .fillMaxWidth()
             .height(130.dp)
             .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.04f))
     ) {

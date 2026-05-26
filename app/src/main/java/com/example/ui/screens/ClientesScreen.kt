@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,18 +50,41 @@ fun ClientesScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val currentPage by viewModel.currentPage.collectAsState()
     val itemsPerPage by viewModel.itemsPerPage.collectAsState()
+    
+    var clientToToggle by remember { mutableStateOf<Client?>(null) }
+    
+    clientToToggle?.let { client ->
+        val isSuspended = client.estado == "cortado" || client.estado == "Cancelado"
+        val actionText = if (isSuspended) "Activar" else "Suspender"
+        AlertDialog(
+            onDismissRequest = { clientToToggle = null },
+            title = { Text("Confirmar Acción") },
+            text = { Text("¿Estás seguro de que deseas $actionText al cliente ${client.nombreCompleto}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.toggleClientStatusRemote(client) { success, message ->
+                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                    }
+                    clientToToggle = null
+                }) { Text("Confirmar", color = MaterialTheme.colorScheme.primary) }
+            },
+            dismissButton = {
+                TextButton(onClick = { clientToToggle = null }) { Text("Cancelar") }
+            }
+        )
+    }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-        // High legibility slim Search Input
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+        ) {
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { viewModel.updateSearchQuery(it) },
-            placeholder = { Text("Buscar por nombre, teléfono...", style = MaterialTheme.typography.bodyMedium) },
-            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = "Buscar", tint = MaterialTheme.colorScheme.primary) },
+            placeholder = { Text("Buscar por nombre, teléfono...") },
+            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = "Buscar") },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
                     IconButton(onClick = { viewModel.updateSearchQuery("") }) {
@@ -70,203 +94,208 @@ fun ClientesScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp)
+                .padding(vertical = 8.dp)
                 .testTag("search_input"),
             singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface
-            ),
-            shape = RoundedCornerShape(16.dp)
+            shape = OutlinedTextFieldDefaults.shape
         )
 
         Spacer(modifier = Modifier.height(6.dp))
 
         // Main client list contents
-        when (val state = uiState) {
-            is UiState.Loading -> {
-                Box(
-                    modifier = Modifier
-                        .weight(1.0f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(strokeWidth = 3.dp)
-                }
-            }
-            is UiState.Error -> {
-                Box(
-                    modifier = Modifier
-                        .weight(1.0f)
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Rounded.CloudOff,
-                            contentDescription = "Error",
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = state.message,
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { viewModel.loadClientes() },
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Reintentar Sincronización")
-                        }
-                    }
-                }
-            }
-            is UiState.Success -> {
-                val filteredClients = clientsList.filter { client ->
-                    // Keyword fields match
-                    val nameMatch = client.nombreCompleto?.contains(searchQuery, ignoreCase = true) ?: false
-                    val phoneMatch = client.telefono?.contains(searchQuery, ignoreCase = true) ?: false
-                    val ipMatch = client.ipCliente?.contains(searchQuery, ignoreCase = true) ?: false
-                    searchQuery.isEmpty() || nameMatch || phoneMatch || ipMatch
-                }
-
-                if (filteredClients.isEmpty()) {
+        AnimatedContent(
+            targetState = uiState,
+            transitionSpec = { fadeIn(tween(400)) togetherWith fadeOut(tween(400)) },
+            label = "clientes_state_transition",
+            modifier = Modifier.weight(1.0f).fillMaxWidth()
+        ) { state ->
+            when (state) {
+                is UiState.Loading -> {
                     Box(
-                        modifier = Modifier
-                            .weight(1.0f)
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(32.dp)
-                        ) {
+                        CircularProgressIndicator(strokeWidth = 3.dp, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                is UiState.Error -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                Icons.Rounded.SearchOff,
-                                contentDescription = "Ningún cliente",
-                                modifier = Modifier.size(72.dp),
-                                tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+                                Icons.Rounded.CloudOff,
+                                contentDescription = "Error",
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.error
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                "Ningún cliente coincide",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Bold
+                                text = state.message,
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyLarge
                             )
-                            Text(
-                                "Prueba cambiando los filtros o el texto ingresado",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { viewModel.loadClientes() },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Reintentar Sincronización")
+                            }
                         }
                     }
-                } else {
-                    // Pagination Computations
-                    val totalItems = filteredClients.size
-                    val totalPages = maxOf(1, kotlin.math.ceil(totalItems.toDouble() / itemsPerPage).toInt())
-                    val safeCurrentPage = minOf(currentPage, totalPages)
-                    val startIndex = (safeCurrentPage - 1) * itemsPerPage
-                    val endIndex = minOf(startIndex + itemsPerPage, totalItems)
-                    val paginatedList = filteredClients.subList(startIndex, endIndex)
-
-                    LazyColumn(
-                        modifier = Modifier
-                            .weight(1.0f)
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        contentPadding = PaddingValues(bottom = 16.dp)
-                    ) {
-                        items(paginatedList, key = { it.id }) { client ->
-                            ClientCard(
-                                client = client,
-                                onDetail = { viewModel.selectClientForDetail(client) },
-                                onDeuda = { viewModel.selectClientForDeuda(client) },
-                                onPago = { viewModel.selectClientForPago(client) },
-                                onToggleStatus = {
-                                    viewModel.toggleClientStatusRemote(client) { success, message ->
-                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                                    }
-                                }
-                            )
-                        }
+                }
+                is UiState.Success -> {
+                    val filteredClients = clientsList.filter { client ->
+                        // Keyword fields match
+                        val nameMatch = client.nombreCompleto?.contains(searchQuery, ignoreCase = true) ?: false
+                        val phoneMatch = client.telefono?.contains(searchQuery, ignoreCase = true) ?: false
+                        val ipMatch = client.ipCliente?.contains(searchQuery, ignoreCase = true) ?: false
+                        searchQuery.isEmpty() || nameMatch || phoneMatch || ipMatch
                     }
 
-                    // Bottom Pagination Capsule Controls
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "$safeCurrentPage de $totalPages",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "(${totalItems} clientes)",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    if (filteredClients.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            FilledIconButton(
-                                onClick = { if (safeCurrentPage > 1) viewModel.setCurrentPage(safeCurrentPage - 1) },
-                                enabled = safeCurrentPage > 1,
-                                modifier = Modifier.size(36.dp),
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    disabledContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                                )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(32.dp)
                             ) {
                                 Icon(
-                                    Icons.AutoMirrored.Rounded.ArrowBack,
-                                    contentDescription = "Prev",
-                                    modifier = Modifier.size(18.dp)
+                                    Icons.Rounded.SearchOff,
+                                    contentDescription = "Ningún cliente",
+                                    modifier = Modifier.size(72.dp),
+                                    tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    "Ningún cliente coincide",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "Prueba cambiando los filtros o el texto ingresado",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.secondary
                                 )
                             }
-                            FilledIconButton(
-                                onClick = { if (safeCurrentPage < totalPages) viewModel.setCurrentPage(safeCurrentPage + 1) },
-                                enabled = safeCurrentPage < totalPages,
-                                modifier = Modifier.size(36.dp),
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    disabledContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                                )
+                        }
+                    } else {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            // Pagination Computations
+                            val totalItems = filteredClients.size
+                            val totalPages = maxOf(1, kotlin.math.ceil(totalItems.toDouble() / itemsPerPage).toInt())
+                            val safeCurrentPage = minOf(currentPage, totalPages)
+                            val startIndex = (safeCurrentPage - 1) * itemsPerPage
+                            val endIndex = minOf(startIndex + itemsPerPage, totalItems)
+                            val paginatedList = filteredClients.subList(startIndex, endIndex)
+
+                            LazyColumn(
+                                modifier = Modifier
+                                    .weight(1.0f)
+                                    .fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                                contentPadding = PaddingValues(bottom = 16.dp)
                             ) {
-                                Icon(
-                                    Icons.AutoMirrored.Rounded.ArrowForward,
-                                    contentDescription = "Next",
-                                    modifier = Modifier.size(18.dp)
-                                )
+                                items(paginatedList, key = { it.id }) { client ->
+                                    ClientCard(
+                                        client = client,
+                                        onDetail = { viewModel.selectClientForDetail(client) },
+                                        onDeuda = { viewModel.selectClientForDetail(client) },
+                                        onPago = { viewModel.selectClientForPago(client) },
+                                        onToggleStatus = { clientToToggle = client }
+                                    )
+                                }
+                            }
+
+                            // Bottom Pagination Capsule Controls
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "$safeCurrentPage de $totalPages",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "(${totalItems} clientes)",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    FilledIconButton(
+                                        onClick = { if (safeCurrentPage > 1) viewModel.setCurrentPage(safeCurrentPage - 1) },
+                                        enabled = safeCurrentPage > 1,
+                                        modifier = Modifier.size(36.dp),
+                                        colors = IconButtonDefaults.filledIconButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            disabledContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                        )
+                                    ) {
+                                        Icon(
+                                            Icons.AutoMirrored.Rounded.ArrowBack,
+                                            contentDescription = "Prev",
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    FilledIconButton(
+                                        onClick = { if (safeCurrentPage < totalPages) viewModel.setCurrentPage(safeCurrentPage + 1) },
+                                        enabled = safeCurrentPage < totalPages,
+                                        modifier = Modifier.size(36.dp),
+                                        colors = IconButtonDefaults.filledIconButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            disabledContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                        )
+                                    ) {
+                                        Icon(
+                                            Icons.AutoMirrored.Rounded.ArrowForward,
+                                            contentDescription = "Next",
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
-}
+        } // Closes Column
+
+        FloatingActionButton(
+            onClick = { viewModel.openRegistrarCliente(true) },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 76.dp, end = 16.dp),
+            containerColor = MaterialTheme.colorScheme.primary
+        ) {
+            Icon(Icons.Rounded.PersonAdd, contentDescription = "Registrar Cliente")
+        }
+    } // Closes Box
+} // Closes ClientesScreen
 
 @Composable
 fun ClientCard(
@@ -276,34 +305,55 @@ fun ClientCard(
     onPago: () -> Unit,
     onToggleStatus: () -> Unit
 ) {
-    val isActive = client.activo == 1
+    val estadoInt = client.estado?.toIntOrNull() ?: if (client.activo == 1) 1 else 3
+    val isActive = estadoInt == 1
+    val isAdeudo = estadoInt == 2
+    val isSuspendido = estadoInt == 3
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Header with name and responsive status indicator badge
+            // Header with name and status indicator badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                val iconColor = when {
+                    isAdeudo -> Color(0xFFEF6C00)
+                    isSuspendido -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.primary
+                }
+                val iconContainerColor = when {
+                    isAdeudo -> Color(0xFFFFF3E0)
+                    isSuspendido -> MaterialTheme.colorScheme.errorContainer
+                    else -> MaterialTheme.colorScheme.primaryContainer
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(iconContainerColor, shape = RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Rounded.Person, contentDescription = null, tint = iconColor)
+                }
+                Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1.0f).padding(end = 8.dp)) {
                     Text(
                         text = client.nombreCompleto?.uppercase() ?: "CLIENTE SIN NOMBRE",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -312,38 +362,62 @@ fun ClientCard(
                     Text(
                         text = "${client.telefono ?: "Sin Teléfono"} • ${if (client.ipCliente.isNullOrEmpty()) "IP Dinámica" else client.ipCliente}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                        fontWeight = FontWeight.Medium
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                // Active status pill
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(99.dp))
-                        .background(if (isActive) GreenBadgeBg else RedBadgeBg)
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .background(if (isActive) GreenBadgeText else RedBadgeText, CircleShape)
-                        )
+                val stateLabel = when {
+                    isAdeudo -> "ADEUDO"
+                    isSuspendido -> "SUSPENDIDO"
+                    else -> "ACTIVO"
+                }
+                
+                val stateColor = when {
+                    isAdeudo -> Color(0xFFEF6C00) // Orange
+                    isSuspendido -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.primary
+                }
+                
+                val stateContainerColor = when {
+                    isAdeudo -> Color(0xFFFFF3E0) // Light Orange
+                    isSuspendido -> MaterialTheme.colorScheme.errorContainer
+                    else -> MaterialTheme.colorScheme.primaryContainer
+                }
+                
+                val stateOnContainerColor = when {
+                    isAdeudo -> Color(0xFFEF6C00)
+                    isSuspendido -> MaterialTheme.colorScheme.onErrorContainer
+                    else -> MaterialTheme.colorScheme.onPrimaryContainer
+                }
+
+                // Active status chip
+                AssistChip(
+                    onClick = { },
+                    label = { 
                         Text(
-                            text = if (isActive) "ACTIVO" else "SUSPENDIDO",
-                            color = if (isActive) GreenBadgeText else RedBadgeText,
+                            text = stateLabel,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold
                         )
-                    }
-                }
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = if (isActive) Icons.Rounded.CheckCircle else if (isAdeudo) Icons.Rounded.Warning else Icons.Rounded.Cancel,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = stateContainerColor,
+                        labelColor = stateOnContainerColor,
+                        leadingIconContentColor = stateOnContainerColor
+                    ),
+                    border = null,
+                    modifier = Modifier.height(24.dp)
+                )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Spec connection tags row
             Row(
@@ -351,180 +425,90 @@ fun ClientCard(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 // Plan
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
-                        .padding(horizontal = 10.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = client.nombrePaquete ?: "Plan Especial",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
+                AssistChip(
+                    onClick = { },
+                    label = { Text(client.nombrePaquete ?: "Plan Especial", style = MaterialTheme.typography.labelSmall) },
+                    modifier = Modifier.height(28.dp),
+                    border = AssistChipDefaults.assistChipBorder(enabled = true)
+                )
                 
                 // Connection Mode
                 val isPppoe = client.tipoConexion?.contains("pppoe", ignoreCase = true) == true
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (isPppoe) BlueBadgeBg else OrangeBadgeBg)
-                        .padding(horizontal = 10.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = if (isPppoe) "PPPoE" else "Estática",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (isPppoe) BlueBadgeText else OrangeBadgeText
-                    )
-                }
+                AssistChip(
+                    onClick = { },
+                    label = { Text(if (isPppoe) "PPPoE" else "Estática", style = MaterialTheme.typography.labelSmall) },
+                    modifier = Modifier.height(28.dp),
+                    border = AssistChipDefaults.assistChipBorder(enabled = true)
+                )
 
                 // Balance
                 val balance = client.saldoActual?.toDoubleOrNull() ?: 0.0
                 if (balance > 0) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(RedBadgeBg)
-                            .padding(horizontal = 10.dp, vertical = 3.dp)
-                    ) {
-                        Text(
-                            text = "$$balance Pendiente",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = RedBadgeText
-                        )
-                    }
+                    AssistChip(
+                        onClick = { },
+                        label = { Text("$$balance Pendiente", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            labelColor = MaterialTheme.colorScheme.onErrorContainer
+                        ),
+                        border = null,
+                        modifier = Modifier.height(28.dp)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Four high-importance interactive action buttons matching material guidelines
+            // Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Perfil Detail Launcher
-                Button(
+                OutlinedButton(
                     onClick = onDetail,
-                    modifier = Modifier
-                        .weight(0.9f)
-                        .height(38.dp)
-                        .testTag("action_profile_${client.id}"),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp),
-                    contentPadding = PaddingValues(horizontal = 2.dp)
+                    modifier = Modifier.weight(1f).testTag("action_profile_${client.id}"),
+                    contentPadding = PaddingValues(horizontal = 0.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Person,
-                        contentDescription = "Detalles",
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(
-                        "Perfil",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Perfil", style = MaterialTheme.typography.labelSmall)
                 }
 
-                // Deuda/Cajero Button
-                Button(
+                FilledTonalButton(
                     onClick = onDeuda,
-                    modifier = Modifier
-                        .weight(0.9f)
-                        .height(38.dp)
-                        .testTag("action_deuda_${client.id}"),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp),
-                    contentPadding = PaddingValues(horizontal = 2.dp)
+                    modifier = Modifier.weight(1f).testTag("action_deuda_${client.id}"),
+                    contentPadding = PaddingValues(horizontal = 0.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Payments,
-                        contentDescription = "Deuda",
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(
-                        "Deuda",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Icon(Icons.Rounded.Payments, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Deuda", style = MaterialTheme.typography.labelSmall)
                 }
 
-                // Cobro (Registrar Pago) Button
                 Button(
                     onClick = onPago,
-                    modifier = Modifier
-                        .weight(0.9f)
-                        .height(38.dp)
-                        .testTag("action_pago_${client.id}"),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BlueBadgeBg,
-                        contentColor = BlueBadgeText
-                    ),
-                    border = BorderStroke(1.dp, BlueBadgeText.copy(alpha = 0.15f)),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp),
-                    contentPadding = PaddingValues(horizontal = 2.dp)
+                    modifier = Modifier.weight(1f).testTag("action_pago_${client.id}"),
+                    contentPadding = PaddingValues(horizontal = 0.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.PointOfSale,
-                        contentDescription = "Cobrar",
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(
-                        "Cobro",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Icon(Icons.Rounded.PointOfSale, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Cobro", style = MaterialTheme.typography.labelSmall)
                 }
 
-                // Active toggler
-                Button(
+                FilledTonalButton(
                     onClick = onToggleStatus,
-                    modifier = Modifier
-                        .weight(1.1f)
-                        .height(38.dp)
-                        .testTag("action_toggle_${client.id}"),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isActive) RedBadgeBg else GreenBadgeBg,
-                        contentColor = if (isActive) RedBadgeText else GreenBadgeText
+                    modifier = Modifier.weight(1.1f).testTag("action_toggle_${client.id}"),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = if (isActive) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = if (isActive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
                     ),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = (if (isActive) RedBadgeText else GreenBadgeText).copy(alpha = 0.2f)
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp),
-                    contentPadding = PaddingValues(horizontal = 2.dp)
+                    contentPadding = PaddingValues(horizontal = 0.dp)
                 ) {
-                    Icon(
-                        imageVector = if (isActive) Icons.Rounded.Block else Icons.Rounded.CheckCircle,
-                        contentDescription = if (isActive) "Cortar" else "Activar",
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(
-                        text = if (isActive) "Cortar" else "Activar",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Icon(if (isActive) Icons.Rounded.Block else Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (isActive) "Cortar" else "Activar", style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

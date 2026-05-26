@@ -13,21 +13,21 @@ import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme =
   darkColorScheme(
-    primary = HighDensityPrimary,
+    primary = DarkNavyPrimary,
     onPrimary = Color.White,
-    primaryContainer = HighDensityPrimaryContainer,
-    onPrimaryContainer = HighDensityOnPrimaryContainer,
-    secondary = HighDensitySecondary,
+    primaryContainer = DarkNavyPrimaryContainer,
+    onPrimaryContainer = DarkNavyOnPrimaryContainer,
+    secondary = DarkNavySecondary,
     onSecondary = Color.White,
-    secondaryContainer = HighDensitySecondaryContainer,
-    onSecondaryContainer = HighDensityOnSecondaryContainer,
-    background = Color(0xFF1F1B1A), // darker mode
-    onBackground = Color(0xFFFDF8F6),
-    surface = Color(0xFF1F1B1A),
-    onSurface = Color(0xFFFDF8F6),
-    surfaceVariant = Color(0xFF524441),
-    onSurfaceVariant = Color(0xFFE5E1E0),
-    outline = Color(0xFF524441)
+    secondaryContainer = DarkNavySecondaryContainer,
+    onSecondaryContainer = DarkNavyOnSecondaryContainer,
+    background = DarkNavyBackground,
+    onBackground = DarkNavyOnSecondaryContainer,
+    surface = DarkNavySurface,
+    onSurface = DarkNavyOnSecondaryContainer,
+    surfaceVariant = DarkNavySurfaceVariant,
+    onSurfaceVariant = DarkNavySecondary,
+    outline = DarkNavyOutline
   )
 
 private val LightColorScheme =
@@ -51,11 +51,18 @@ private val LightColorScheme =
 
 @Composable
 fun MyApplicationTheme(
-  darkTheme: Boolean = false, // Always force light mode
+  darkTheme: Boolean = isSystemInDarkTheme(),
   dynamicColor: Boolean = false,
   content: @Composable () -> Unit,
 ) {
-  val colorScheme = LightColorScheme
+  val colorScheme = when {
+      dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+          val context = LocalContext.current
+          if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+      }
+      darkTheme -> DarkColorScheme
+      else -> LightColorScheme
+  }
 
   MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
 }

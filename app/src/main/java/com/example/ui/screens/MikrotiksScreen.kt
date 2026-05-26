@@ -271,7 +271,8 @@ fun MikrotiksScreen(
                         items(routers) { router ->
                             RouterItemCard(
                                 router = router,
-                                pulseAlpha = alphaAnim
+                                pulseAlpha = alphaAnim,
+                                onClick = { viewModel.selectRouterForDashboard(router.id) }
                             )
                         }
                     }
@@ -284,7 +285,8 @@ fun MikrotiksScreen(
 @Composable
 fun RouterItemCard(
     router: RouterData,
-    pulseAlpha: Float
+    pulseAlpha: Float,
+    onClick: () -> Unit
 ) {
     val isOnline = router.isOnline == true
     val statusColor = if (isOnline) Color(0xFF4CAF50) else Color(0xFFF44336)
@@ -293,18 +295,11 @@ fun RouterItemCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("router_card_${router.id ?: "0"}"),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isOnline) MaterialTheme.colorScheme.surface
-                              else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ),
-        border = BorderStroke(
-            width = 1.dp,
-            color = if (isOnline) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isOnline) 2.dp else 0.dp)
+            .testTag("router_card_${router.id ?: "0"}")
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
@@ -324,11 +319,11 @@ fun RouterItemCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
+                            .size(48.dp)
                             .background(
-                                if (isOnline) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                                else MaterialTheme.colorScheme.surfaceVariant
+                                if (isOnline) MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.errorContainer,
+                                shape = RoundedCornerShape(12.dp)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -336,7 +331,7 @@ fun RouterItemCard(
                             imageVector = Icons.Rounded.SettingsEthernet,
                             contentDescription = "Router",
                             tint = if (isOnline) MaterialTheme.colorScheme.primary 
-                                   else MaterialTheme.colorScheme.onSurfaceVariant
+                                   else MaterialTheme.colorScheme.error
                         )
                     }
 
