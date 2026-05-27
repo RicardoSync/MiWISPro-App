@@ -225,6 +225,25 @@ interface MiwisApiService {
         @Query("interfaz") interfaz: String,
         @Query("accion") accion: Int = 2
     ): MikrotikTrafficResponse
+
+    @GET("api/mikrotik_accion.php")
+    suspend fun getMikrotikDhcpLeases(
+        @Query("token") token: String,
+        @Query("subdominio") subdominio: String,
+        @Query("id") id: String,
+        @Query("accion") accion: Int = 6
+    ): MikrotikDhcpLeasesResponse
+
+    @GET("api/mikrotik_accion.php")
+    suspend fun makeLeaseStatic(
+        @Query("token") token: String,
+        @Query("subdominio") subdominio: String,
+        @Query("id") id: String,
+        @Query("ip") ip: String,
+        @Query("accion") accion: Int = 7
+    ): MakeLeaseStaticResponse
+
+
 }
 
 object RetrofitClient {

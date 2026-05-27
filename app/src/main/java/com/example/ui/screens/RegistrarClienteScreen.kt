@@ -42,6 +42,9 @@ fun RegistrarClienteScreen(
     val registrarState by viewModel.registrarClienteState.collectAsState()
     val datosState by viewModel.datosRegistroState.collectAsState()
 
+    val initialNombre by viewModel.registrarInitialNombre.collectAsState()
+    val initialIp by viewModel.registrarInitialIp.collectAsState()
+
     var nombre by remember { mutableStateOf("") }
     var tel by remember { mutableStateOf("") }
     var selectedPaquete by remember { mutableStateOf<com.example.data.Paquete?>(null) }
@@ -58,7 +61,19 @@ fun RegistrarClienteScreen(
     var dni by remember { mutableStateOf("") }
     var promesaPago by remember { mutableStateOf("") }
 
+    LaunchedEffect(initialNombre, initialIp) {
+        if (initialNombre.isNotEmpty()) {
+            nombre = initialNombre
+        }
+        if (initialIp.isNotEmpty()) {
+            ipCliente = initialIp
+            tipoConexion = "estatica"
+        }
+        viewModel.clearRegistrarInitialData()
+    }
+
     var expandedConexion by remember { mutableStateOf(false) }
+
     var expandedPaquete by remember { mutableStateOf(false) }
     var expandedMikrotik by remember { mutableStateOf(false) }
     var expandedServicio by remember { mutableStateOf(false) }

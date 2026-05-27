@@ -80,6 +80,8 @@ sealed interface AppScreen {
     data class Detail(val client: com.example.data.Client) : AppScreen
     data class Pago(val client: com.example.data.Client) : AppScreen
     data class MikrotikDashboard(val routerId: String) : AppScreen
+    data class MikrotikDhcpLeases(val routerId: String) : AppScreen
+
     object RegistrarCliente : AppScreen
     object Suspendidos : AppScreen
     object HistorialPagos : AppScreen
@@ -177,6 +179,7 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
   // We need a state for selected router id in viewmodel, but since we navigate by creating state,
   // we can use a local state or add it to viewmodel. Let's add it to viewmodel.
   val selectedRouterId by viewModel.selectedRouterId.collectAsState()
+  val selectedRouterIdForDhcpLeases by viewModel.selectedRouterIdForDhcpLeases.collectAsState()
 
   val navToRegistrar by viewModel.navigateToRegistrarCliente.collectAsState()
   val navToSuspendidos by viewModel.navigateToSuspendidos.collectAsState()
@@ -186,13 +189,16 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
   val navToPremisas by viewModel.navigateToPremisas.collectAsState()
   val selectedFacturaDetail by viewModel.selectedFacturaDetail.collectAsState()
 
-  val screenState = remember(selectedDetailClient, selectedPagoClient, selectedRouterId, navToRegistrar, navToSuspendidos, navToHistorial, navToCortes, navToTareas, navToPremisas, selectedFacturaDetail) {
+  val screenState = remember(selectedDetailClient, selectedPagoClient, selectedRouterId, selectedRouterIdForDhcpLeases, navToRegistrar, navToSuspendidos, navToHistorial, navToCortes, navToTareas, navToPremisas, selectedFacturaDetail) {
     when {
       selectedFacturaDetail != null -> AppScreen.FacturaDetail(selectedFacturaDetail!!.first, selectedFacturaDetail!!.second)
       selectedDetailClient != null -> AppScreen.Detail(selectedDetailClient!!)
       selectedPagoClient != null -> AppScreen.Pago(selectedPagoClient!!)
-      selectedRouterId != null -> AppScreen.MikrotikDashboard(selectedRouterId!!)
       navToRegistrar -> AppScreen.RegistrarCliente
+      selectedRouterIdForDhcpLeases != null -> AppScreen.MikrotikDhcpLeases(selectedRouterIdForDhcpLeases!!)
+      selectedRouterId != null -> AppScreen.MikrotikDashboard(selectedRouterId!!)
+
+
       navToSuspendidos -> AppScreen.Suspendidos
       navToHistorial -> AppScreen.HistorialPagos
       navToCortes -> AppScreen.CortesAutomaticos
@@ -232,6 +238,14 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
             onBack = { viewModel.selectRouterForDashboard(null) }
           )
         }
+        is AppScreen.MikrotikDhcpLeases -> {
+          com.example.ui.screens.MikrotikDhcpLeasesScreen(
+            routerId = targetScreen.routerId,
+            viewModel = viewModel,
+            onBack = { viewModel.selectRouterForDhcpLeases(null) }
+          )
+        }
+
         is AppScreen.Pago -> {
           RegistrarPagoScreen(
             client = targetScreen.client,

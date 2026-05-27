@@ -56,6 +56,14 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
         _selectedRouterId.value = routerId
     }
 
+    private val _selectedRouterIdForDhcpLeases = MutableStateFlow<String?>(null)
+    val selectedRouterIdForDhcpLeases: StateFlow<String?> = _selectedRouterIdForDhcpLeases.asStateFlow()
+
+    fun selectRouterForDhcpLeases(routerId: String?) {
+        _selectedRouterIdForDhcpLeases.value = routerId
+    }
+
+
     private val _selectedPagoClient = MutableStateFlow<Client?>(null)
     val selectedPagoClient: StateFlow<Client?> = _selectedPagoClient.asStateFlow()
 
@@ -66,12 +74,30 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
     private val _navigateToRegistrarCliente = MutableStateFlow(false)
     val navigateToRegistrarCliente: StateFlow<Boolean> = _navigateToRegistrarCliente.asStateFlow()
 
+    private val _registrarInitialNombre = MutableStateFlow("")
+    val registrarInitialNombre: StateFlow<String> = _registrarInitialNombre.asStateFlow()
+
+    private val _registrarInitialIp = MutableStateFlow("")
+    val registrarInitialIp: StateFlow<String> = _registrarInitialIp.asStateFlow()
+
     fun openRegistrarCliente(open: Boolean) {
         _navigateToRegistrarCliente.value = open
         if (open) {
             loadDatosRegistro()
         }
     }
+
+    fun openRegistrarClienteWithData(nombre: String, ip: String) {
+        _registrarInitialNombre.value = nombre
+        _registrarInitialIp.value = ip
+        openRegistrarCliente(true)
+    }
+
+    fun clearRegistrarInitialData() {
+        _registrarInitialNombre.value = ""
+        _registrarInitialIp.value = ""
+    }
+
 
     private val _navigateToSuspendidos = MutableStateFlow(false)
     val navigateToSuspendidos: StateFlow<Boolean> = _navigateToSuspendidos.asStateFlow()
@@ -730,6 +756,62 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
             onFinished(list)
         }
     }
+
+    // List Mikrotik DHCP leases remotely
+    fun getMikrotikDhcpLeasesRemote(
+        routerId: String,
+        onResult: (state: UiState<com.example.data.MikrotikDhcpLeasesResponse>) -> Unit
+    ) {
+        viewModelScope.launch {
+            onResult(UiState.Loading)
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getMikrotikDhcpLeases(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    id = routerId,
+                    accion = 6
+                )
+                if (response.success) {
+                    onResult(UiState.Success(response))
+                } else {
+                    onResult(UiState.Error(response.message ?: "La API no pudo obtener la lista de leases DHCP."))
+                }
+            } catch (e: Exception) {
+                onResult(UiState.Error("Error de red: ${e.localizedMessage ?: "Intente de nuevo"}"))
+            }
+        }
+    }
+
+    // Convert DHCP lease to static remotely
+    fun makeLeaseStaticRemote(
+        routerId: String,
+        ipAddress: String,
+        onResult: (state: UiState<com.example.data.MakeLeaseStaticResponse>) -> Unit
+    ) {
+        viewModelScope.launch {
+            onResult(UiState.Loading)
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.makeLeaseStatic(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    id = routerId,
+                    ip = ipAddress,
+                    accion = 7
+                )
+                if (response.success) {
+                    onResult(UiState.Success(response))
+                } else {
+                    onResult(UiState.Error(response.message ?: "La API no pudo convertir el lease a estático."))
+                }
+            } catch (e: Exception) {
+                onResult(UiState.Error("Error de red: ${e.localizedMessage ?: "Intente de nuevo"}"))
+            }
+        }
+    }
+
+
 
     // Sync client to Mikrotik
     fun syncMikrotikRemote(

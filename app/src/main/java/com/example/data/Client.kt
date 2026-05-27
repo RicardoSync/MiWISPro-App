@@ -529,5 +529,48 @@ data class MikrotikTrafficResponse(
     val data: MikrotikTrafficData?
 )
 
+@JsonClass(generateAdapter = true)
+data class DhcpLease(
+    val id: String?,
+    val address: String?,
+    @Json(name = "mac_address") val macAddress: String?,
+    @Json(name = "host_name") val hostName: String?,
+    val server: String?,
+    val status: String?,
+    @Json(name = "last_seen") val lastSeen: String?,
+    val dynamic: Boolean?,
+    val disabled: Boolean?
+)
+
+@JsonClass(generateAdapter = true)
+data class MikrotikDhcpLeasesResponse(
+    val success: Boolean,
+    val subdominio: String?,
+    @Json(name = "id_mikrotik") val idMikrotik: Int?,
+    val nombre: String?,
+    val ip: String?,
+    val accion: Int?,
+    @Json(name = "accion_descripcion") val accionDescripcion: String?,
+    val message: String?,
+    val data: List<DhcpLease>?,
+    val total: Int?
+)
+
+@JsonClass(generateAdapter = true)
+data class MakeLeaseStaticResponse(
+    val success: Boolean,
+    val subdominio: String?,
+    @Json(name = "id_mikrotik") val idMikrotik: Int?,
+    val nombre: String?,
+    val ip: String?,
+    val accion: Int?,
+    @Json(name = "accion_descripcion") val accionDescripcion: String?,
+    @Json(name = "ip_objetivo") val ipObjetivo: String?,
+    val message: String?,
+    val data: DhcpLease?
+)
+
+
+
 
 

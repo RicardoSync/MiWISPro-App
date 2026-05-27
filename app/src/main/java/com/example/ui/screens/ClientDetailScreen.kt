@@ -327,9 +327,16 @@ fun ClientInfoTabContent(
                 ) {
                     Column {
                         ListItem(
-                            headlineContent = { Text("Configuración IP") },
-                            supportingContent = { Text(client.ipAddress ?: client.ipCliente ?: "IP Dinámica") },
-                            leadingContent = { Icon(Icons.Rounded.Language, contentDescription = null) },
+                            headlineContent = { Text("IP del Cliente") },
+                            supportingContent = { Text(client.ipCliente ?: "IP Dinámica") },
+                            leadingContent = { Icon(Icons.Rounded.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                        ListItem(
+                            headlineContent = { Text("MikroTik Enlazado") },
+                            supportingContent = { Text("${client.nombreMikrotik ?: "MikroTik"} • ${client.ipAddress ?: "Sin IP"}") },
+                            leadingContent = { Icon(Icons.Rounded.Router, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                             colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                         )
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
