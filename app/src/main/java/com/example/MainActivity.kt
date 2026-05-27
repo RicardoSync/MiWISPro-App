@@ -24,6 +24,8 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.rounded.Router
+import androidx.compose.material.icons.outlined.Router
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Hardware
@@ -342,7 +344,7 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
                   NavigationItemData(tab = HomeTab.Home, selectedIcon = Icons.Rounded.Home, unselectedIcon = Icons.Outlined.Home, testTag = "nav_home", label = "Inicio"),
                   NavigationItemData(tab = HomeTab.Clientes, selectedIcon = Icons.Rounded.People, unselectedIcon = Icons.Outlined.People, testTag = "nav_clientes", label = "Clientes"),
                   NavigationItemData(tab = HomeTab.Global, selectedIcon = Icons.Rounded.Speed, unselectedIcon = Icons.Outlined.Speed, testTag = "nav_global", label = "Monitor Global"),
-                  NavigationItemData(tab = HomeTab.Mikrotik, iconDrawableRes = R.drawable.ic_tux, testTag = "nav_mikrotik", label = "Ruteadores"),
+                  NavigationItemData(tab = HomeTab.Mikrotik, selectedIcon = Icons.Rounded.Router, unselectedIcon = Icons.Outlined.Router, testTag = "nav_mikrotik", label = "MikroTik"),
                   NavigationItemData(tab = HomeTab.Ajustes, selectedIcon = Icons.Rounded.Settings, unselectedIcon = Icons.Outlined.Settings, testTag = "nav_ajustes", label = "Ajustes")
                 )
 
@@ -448,7 +450,7 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
                       text = when (currentTab) {
                         HomeTab.Home -> "Panel MiWISPro"
                         HomeTab.Clientes -> "Gestión de Clientes"
-                        HomeTab.Mikrotik -> "Ruteadores"
+                        HomeTab.Mikrotik -> "MikroTik"
                         HomeTab.Ajustes -> "Ajustes de Sistema"
                         else -> "MiWISPro"
                       },

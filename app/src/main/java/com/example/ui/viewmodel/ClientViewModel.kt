@@ -642,6 +642,95 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    // Reboot Mikrotik router remotely
+    fun reiniciarMikrotikRemote(
+        routerId: String,
+        onResult: (success: Boolean, message: String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.reiniciarMikrotik(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    id = routerId
+                )
+                if (response.success) {
+                    onResult(true, response.message ?: "Comando de reinicio enviado exitosamente.")
+                } else {
+                    onResult(false, response.message ?: "Error al intentar reiniciar el Mikrotik.")
+                }
+            } catch (e: Exception) {
+                onResult(false, "Error de red: ${e.localizedMessage ?: "Intente de nuevo"}")
+            }
+        }
+    }
+
+    // List Mikrotik interfaces remotely
+    fun getMikrotikInterfacesRemote(
+        routerId: String,
+        onResult: (state: UiState<com.example.data.MikrotikAccionResponse>) -> Unit
+    ) {
+        viewModelScope.launch {
+            onResult(UiState.Loading)
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getMikrotikAccion(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    id = routerId,
+                    accion = 5
+                )
+                if (response.success) {
+                    onResult(UiState.Success(response))
+                } else {
+                    onResult(UiState.Error(response.message ?: "La API no pudo obtener la lista de interfaces."))
+                }
+            } catch (e: Exception) {
+                onResult(UiState.Error("Error de red: ${e.localizedMessage ?: "Intente de nuevo"}"))
+            }
+        }
+    }
+
+    // Monitor Mikrotik interface traffic remotely by polling 5 times, once per second
+    fun monitorMikrotikTrafficRemote(
+        routerId: String,
+        interfaceName: String,
+        onProgress: (readingIndex: Int, data: com.example.data.MikrotikTrafficData) -> Unit,
+        onFinished: (readings: List<com.example.data.MikrotikTrafficData>) -> Unit,
+        onError: (message: String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val list = mutableListOf<com.example.data.MikrotikTrafficData>()
+            val config = _appConfig.value
+            for (i in 1..5) {
+                try {
+                    val response = RetrofitClient.apiService.getMikrotikTraffic(
+                        token = config.token,
+                        subdominio = config.subdominio,
+                        id = routerId,
+                        interfaz = interfaceName,
+                        accion = 2
+                    )
+                    if (response.success && response.data != null) {
+                        list.add(response.data)
+                        onProgress(i, response.data)
+                    } else {
+                        onError(response.message ?: "Error al leer tráfico de la interfaz.")
+                        return@launch
+                    }
+                } catch (e: Exception) {
+                    onError("Error de red: ${e.localizedMessage ?: "Intente de nuevo"}")
+                    return@launch
+                }
+                if (i < 5) {
+                    kotlinx.coroutines.delay(1000)
+                }
+            }
+            onFinished(list)
+        }
+    }
+
     // Sync client to Mikrotik
     fun syncMikrotikRemote(
         clientId: String,

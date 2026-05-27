@@ -468,3 +468,66 @@ data class EjecutarActivacionesResponse(
     val mensaje: String?,
     val data: EjecutarActivacionesData?
 )
+
+@JsonClass(generateAdapter = true)
+data class ReiniciarMikrotikResponse(
+    val success: Boolean,
+    val subdominio: String?,
+    @Json(name = "id_mikrotik") val idMikrotik: Int?,
+    val nombre: String?,
+    val ip: String?,
+    val message: String?
+)
+
+@JsonClass(generateAdapter = true)
+data class MikrotikInterface(
+    val name: String?,
+    val type: String?,
+    val running: Boolean?,
+    val disabled: Boolean?,
+    val comment: String?
+)
+
+@JsonClass(generateAdapter = true)
+data class MikrotikAccionResponse(
+    val success: Boolean,
+    val subdominio: String?,
+    @Json(name = "id_mikrotik") val idMikrotik: Int?,
+    val nombre: String?,
+    val ip: String?,
+    val accion: Int?,
+    @Json(name = "accion_descripcion") val accionDescripcion: String?,
+    val message: String?,
+    val data: List<MikrotikInterface>?,
+    val total: Int?
+)
+
+@JsonClass(generateAdapter = true)
+data class MikrotikTrafficData(
+    @Json(name = "interfaz") val interfaz: String?,
+    @Json(name = "rx_bits_per_second") val rxBitsPerSecond: Long?,
+    @Json(name = "tx_bits_per_second") val txBitsPerSecond: Long?,
+    @Json(name = "rx_packets_per_second") val rxPacketsPerSecond: Long?,
+    @Json(name = "tx_packets_per_second") val txPacketsPerSecond: Long?,
+    @Json(name = "rx_human") val rxHuman: String?,
+    @Json(name = "tx_human") val txHuman: String?,
+    @Json(name = "interface_running") val interfaceRunning: Boolean?,
+    @Json(name = "interface_disabled") val interfaceDisabled: Boolean?
+)
+
+@JsonClass(generateAdapter = true)
+data class MikrotikTrafficResponse(
+    val success: Boolean,
+    val subdominio: String?,
+    @Json(name = "id_mikrotik") val idMikrotik: Int?,
+    val nombre: String?,
+    val ip: String?,
+    val accion: Int?,
+    @Json(name = "accion_descripcion") val accionDescripcion: String?,
+    val interfaz: String?,
+    val message: String?,
+    val data: MikrotikTrafficData?
+)
+
+
+

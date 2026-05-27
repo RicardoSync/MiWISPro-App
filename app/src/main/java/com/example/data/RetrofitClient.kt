@@ -201,6 +201,30 @@ interface MiwisApiService {
         @Query("subdominio") subdominio: String,
         @Query("accion") accion: Int = 1
     ): EjecutarActivacionesResponse
+
+    @GET("api/reiniciar_mikrotik.php")
+    suspend fun reiniciarMikrotik(
+        @Query("token") token: String,
+        @Query("subdominio") subdominio: String,
+        @Query("id") id: String
+    ): ReiniciarMikrotikResponse
+
+    @GET("api/mikrotik_accion.php")
+    suspend fun getMikrotikAccion(
+        @Query("token") token: String,
+        @Query("subdominio") subdominio: String,
+        @Query("id") id: String,
+        @Query("accion") accion: Int = 5
+    ): MikrotikAccionResponse
+
+    @GET("api/mikrotik_accion.php")
+    suspend fun getMikrotikTraffic(
+        @Query("token") token: String,
+        @Query("subdominio") subdominio: String,
+        @Query("id") id: String,
+        @Query("interfaz") interfaz: String,
+        @Query("accion") accion: Int = 2
+    ): MikrotikTrafficResponse
 }
 
 object RetrofitClient {
