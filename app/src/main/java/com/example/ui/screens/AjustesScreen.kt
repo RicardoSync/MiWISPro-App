@@ -162,7 +162,7 @@ fun AjustesScreen(
                             },
                             modifier = Modifier.clickable(enabled = !isSyncing) {
                                 viewModel.loadClientes()
-                                Toast.makeText(context, "Sincronizando con Miwis Pro...", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Sincronizando con MiwisPro...", Toast.LENGTH_SHORT).show()
                             },
                             colors = ListItemDefaults.colors(
                                 containerColor = Color.Transparent,
@@ -221,7 +221,7 @@ fun AjustesScreen(
 
                         ListItem(
                             headlineContent = { Text("Software de Gestión") },
-                            supportingContent = { Text("Miwis Pro WEB by Software Escobedo.") },
+                            supportingContent = { Text("MiWISProApp desarrollada por Software Escobedo.") },
                             leadingContent = {
                                 Icon(
                                     Icons.Rounded.DeveloperMode,

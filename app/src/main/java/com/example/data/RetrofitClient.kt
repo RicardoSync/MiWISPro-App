@@ -187,6 +187,20 @@ interface MiwisApiService {
         @Query("token") token: String,
         @Query("subdominio") subdominio: String
     ): MetodosPagoResponse
+
+    @GET("api/ejecutar_cortes.php")
+    suspend fun ejecutarCortes(
+        @Query("token") token: String,
+        @Query("subdominio") subdominio: String,
+        @Query("accion") accion: Int = 1
+    ): EjecutarCortesResponse
+
+    @GET("api/ejecutar_activaciones.php")
+    suspend fun ejecutarActivaciones(
+        @Query("token") token: String,
+        @Query("subdominio") subdominio: String,
+        @Query("accion") accion: Int = 1
+    ): EjecutarActivacionesResponse
 }
 
 object RetrofitClient {

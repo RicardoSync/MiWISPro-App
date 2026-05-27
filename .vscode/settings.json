@@ -1,0 +1,4 @@
+{
+    "java.import.gradle.java.home": "/usr/lib/jvm/jdk-24.0.2-oracle-x64",
+    "java.jdt.ls.java.home": "/usr/lib/jvm/jdk-24.0.2-oracle-x64"
+}

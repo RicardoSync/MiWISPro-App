@@ -825,6 +825,64 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    private val _ejecutarCortesState = MutableStateFlow<UiState<com.example.data.EjecutarCortesResponse>?>(null)
+    val ejecutarCortesState: StateFlow<UiState<com.example.data.EjecutarCortesResponse>?> = _ejecutarCortesState.asStateFlow()
+
+    fun resetEjecutarCortesState() {
+        _ejecutarCortesState.value = null
+    }
+
+    fun ejecutarCorteInmediato() {
+        viewModelScope.launch {
+            _ejecutarCortesState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.ejecutarCortes(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    accion = 1
+                )
+                if (response.success) {
+                    _ejecutarCortesState.value = UiState.Success(response)
+                    loadClientes()
+                } else {
+                    _ejecutarCortesState.value = UiState.Error(response.mensaje ?: "Error al ejecutar cortes de emergencia")
+                }
+            } catch (e: Exception) {
+                _ejecutarCortesState.value = UiState.Error(e.localizedMessage ?: "Error de red")
+            }
+        }
+    }
+
+    private val _ejecutarActivacionesState = MutableStateFlow<UiState<com.example.data.EjecutarActivacionesResponse>?>(null)
+    val ejecutarActivacionesState: StateFlow<UiState<com.example.data.EjecutarActivacionesResponse>?> = _ejecutarActivacionesState.asStateFlow()
+
+    fun resetEjecutarActivacionesState() {
+        _ejecutarActivacionesState.value = null
+    }
+
+    fun ejecutarActivacionInmediata() {
+        viewModelScope.launch {
+            _ejecutarActivacionesState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.ejecutarActivaciones(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    accion = 1
+                )
+                if (response.success) {
+                    _ejecutarActivacionesState.value = UiState.Success(response)
+                    loadClientes()
+                } else {
+                    _ejecutarActivacionesState.value = UiState.Error(response.mensaje ?: "Error al ejecutar activaciones de emergencia")
+                }
+            } catch (e: Exception) {
+                _ejecutarActivacionesState.value = UiState.Error(e.localizedMessage ?: "Error de red")
+            }
+        }
+    }
+
     private val _configAutomatizacionState = MutableStateFlow<UiState<com.example.data.ConfigAutomatizacionResponse>>(UiState.Loading)
     val configAutomatizacionState: StateFlow<UiState<com.example.data.ConfigAutomatizacionResponse>> = _configAutomatizacionState.asStateFlow()
 

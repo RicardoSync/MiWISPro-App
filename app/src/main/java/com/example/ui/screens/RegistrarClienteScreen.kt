@@ -1,7 +1,15 @@
 package com.example.ui.screens
 
+import android.Manifest
 import android.app.DatePickerDialog
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
+import android.widget.Toast
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -69,6 +77,43 @@ fun RegistrarClienteScreen(
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH)
         ).show()
+    }
+
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+    @SuppressLint("MissingPermission")
+    val fetchLocation: () -> Unit = {
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            if (location != null) {
+                coordenadas = "${location.latitude}, ${location.longitude}"
+            } else {
+                Toast.makeText(context, "No se pudo obtener la ubicación, encienda el GPS", Toast.LENGTH_SHORT).show()
+            }
+        }.addOnFailureListener {
+            Toast.makeText(context, "Error al obtener ubicación", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || 
+            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
+            fetchLocation()
+        } else {
+            Toast.makeText(context, "Permisos de ubicación denegados", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    val requestLocation: () -> Unit = {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fetchLocation()
+        } else {
+            locationPermissionLauncher.launch(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            )
+        }
     }
 
     LaunchedEffect(registrarState) {
@@ -345,7 +390,20 @@ fun RegistrarClienteScreen(
                 onValueChange = { coordenadas = it },
                 label = { Text("Coordenadas (Lat, Lng)") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                trailingIcon = {
+                    FilledIconButton(
+                        onClick = requestLocation,
+                        modifier = Modifier.padding(end = 8.dp).size(40.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Icon(Icons.Rounded.LocationOn, contentDescription = "Obtener ubicación", modifier = Modifier.size(22.dp))
+                    }
+                }
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

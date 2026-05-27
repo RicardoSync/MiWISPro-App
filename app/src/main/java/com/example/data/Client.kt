@@ -439,3 +439,32 @@ data class MetodosPagoResponse(
     val success: Boolean,
     val data: List<MetodoPagoData>?
 )
+
+@JsonClass(generateAdapter = true)
+data class EjecutarCortesData(
+    val suspendidos: Int?,
+    val activados: Int?,
+    val errores: Int?,
+    val detalles: List<String>?
+)
+
+@JsonClass(generateAdapter = true)
+data class EjecutarCortesResponse(
+    val success: Boolean,
+    val mensaje: String?,
+    val data: EjecutarCortesData?
+)
+
+@JsonClass(generateAdapter = true)
+data class EjecutarActivacionesData(
+    val activados: Int?,
+    val errores: Int?,
+    val detalles: List<String>?
+)
+
+@JsonClass(generateAdapter = true)
+data class EjecutarActivacionesResponse(
+    val success: Boolean,
+    val mensaje: String?,
+    val data: EjecutarActivacionesData?
+)

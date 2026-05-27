@@ -2,7 +2,9 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Block
@@ -10,8 +12,12 @@ import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +40,72 @@ fun CortesAutomaticosScreen(
     var selectedHour by remember { mutableStateOf("09:00:00") }
     var isActive by remember { mutableStateOf(false) }
     var diasGracia by remember { mutableStateOf("3") }
+
+    val ejecutarCortesState by viewModel.ejecutarCortesState.collectAsState()
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var showResultDialog by remember { mutableStateOf(false) }
+    var showLoadingDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    val ejecutarActivacionesState by viewModel.ejecutarActivacionesState.collectAsState()
+    var showConfirmActivacionesDialog by remember { mutableStateOf(false) }
+    var showResultActivacionesDialog by remember { mutableStateOf(false) }
+    var showLoadingActivacionesDialog by remember { mutableStateOf(false) }
+    var showErrorActivacionesDialog by remember { mutableStateOf(false) }
+    var errorActivacionesMessage by remember { mutableStateOf("") }
+
+    LaunchedEffect(ejecutarCortesState) {
+        when (val state = ejecutarCortesState) {
+            is UiState.Loading -> {
+                showLoadingDialog = true
+                showResultDialog = false
+                showErrorDialog = false
+            }
+            is UiState.Success -> {
+                showLoadingDialog = false
+                showResultDialog = true
+                showErrorDialog = false
+            }
+            is UiState.Error -> {
+                showLoadingDialog = false
+                showResultDialog = false
+                showErrorDialog = true
+                errorMessage = state.message
+            }
+            null -> {
+                showLoadingDialog = false
+                showResultDialog = false
+                showErrorDialog = false
+            }
+        }
+    }
+
+    LaunchedEffect(ejecutarActivacionesState) {
+        when (val state = ejecutarActivacionesState) {
+            is UiState.Loading -> {
+                showLoadingActivacionesDialog = true
+                showResultActivacionesDialog = false
+                showErrorActivacionesDialog = false
+            }
+            is UiState.Success -> {
+                showLoadingActivacionesDialog = false
+                showResultActivacionesDialog = true
+                showErrorActivacionesDialog = false
+            }
+            is UiState.Error -> {
+                showLoadingActivacionesDialog = false
+                showResultActivacionesDialog = false
+                showErrorActivacionesDialog = true
+                errorActivacionesMessage = state.message
+            }
+            null -> {
+                showLoadingActivacionesDialog = false
+                showResultActivacionesDialog = false
+                showErrorActivacionesDialog = false
+            }
+        }
+    }
 
     // Initialize local state when data loads successfully
     LaunchedEffect(configState) {
@@ -105,7 +177,8 @@ fun CortesAutomaticosScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
-                        .padding(16.dp),
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     // Status Card
@@ -244,8 +317,441 @@ fun CortesAutomaticosScreen(
                             )
                         }
                     }
+
+                    // Card for Immediate Emergency Cuts
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                "Corte de Emergencia (Inmediato)",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "Ejecuta de manera manual e inmediata el proceso de corte para todos los clientes que presenten facturas vencidas.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { showConfirmDialog = true },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Rounded.PlayArrow, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Ejecutar Corte Inmediato", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    // Card for Immediate Emergency Activations
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                "Activación Masiva de Emergencia",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "Activa de forma masiva e inmediata a todos los clientes que hayan sido suspendidos por error.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { showConfirmActivacionesDialog = true },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Rounded.PlayArrow, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Ejecutar Activación Masiva", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
             }
         }
+    }
+
+    // Dialogs for Immediate Cuts flow
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Rounded.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Confirmar Corte Inmediato", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text(
+                    "¿Estás seguro de que deseas ejecutar el proceso de cortes de emergencia de inmediato?\n\nEsta acción suspenderá el servicio en el MikroTik a todos los clientes que tengan deudas o facturas vencidas."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showConfirmDialog = false
+                        viewModel.ejecutarCorteInmediato()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Ejecutar Corte")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showLoadingDialog) {
+        AlertDialog(
+            onDismissRequest = { /* No se puede descartar */ },
+            confirmButton = {},
+            title = {
+                Text("Ejecutando Cortes de Emergencia", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                ) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.error,
+                        strokeWidth = 4.dp
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        "Por favor espere. El servidor está procesando las suspensiones en los routers MikroTik...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        )
+    }
+
+    if (showResultDialog) {
+        val response = (ejecutarCortesState as? UiState.Success)?.data
+        AlertDialog(
+            onDismissRequest = {
+                showResultDialog = false
+                viewModel.resetEjecutarCortesState()
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Rounded.Block,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Resultado del Proceso", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = response?.mensaje ?: "Proceso de cortes finalizado.",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    val stats = response?.data
+                    if (stats != null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Clientes Suspendidos:", fontWeight = FontWeight.Medium)
+                                    Text(
+                                        "${stats.suspendidos ?: 0}",
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Clientes Activados:", fontWeight = FontWeight.Medium)
+                                    Text(
+                                        "${stats.activados ?: 0}",
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Errores en proceso:", fontWeight = FontWeight.Medium)
+                                    Text(
+                                        "${stats.errores ?: 0}",
+                                        fontWeight = FontWeight.Bold,
+                                        color = if ((stats.errores ?: 0) > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showResultDialog = false
+                        viewModel.resetEjecutarCortesState()
+                    }
+                ) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    if (showErrorDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showErrorDialog = false
+                viewModel.resetEjecutarCortesState()
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Rounded.Block,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Error al Ejecutar Cortes", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text(errorMessage)
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showErrorDialog = false
+                        viewModel.resetEjecutarCortesState()
+                    }
+                ) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    // Dialogs for Immediate Activations flow
+    if (showConfirmActivacionesDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmActivacionesDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Rounded.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Confirmar Activación Masiva", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text(
+                    "¿Estás seguro de que deseas ejecutar el proceso de activaciones masivas de inmediato?\n\nEsta acción restablecerá el servicio en el MikroTik a todos los clientes suspendidos para corregir cualquier suspensión realizada por error."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showConfirmActivacionesDialog = false
+                        viewModel.ejecutarActivacionInmediata()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Ejecutar Activación")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmActivacionesDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showLoadingActivacionesDialog) {
+        AlertDialog(
+            onDismissRequest = { /* No se puede descartar */ },
+            confirmButton = {},
+            title = {
+                Text("Ejecutando Activación Masiva", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                ) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 4.dp
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        "Por favor espere. El servidor está reactivando las cuentas en los routers MikroTik...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        )
+    }
+
+    if (showResultActivacionesDialog) {
+        val response = (ejecutarActivacionesState as? UiState.Success)?.data
+        AlertDialog(
+            onDismissRequest = {
+                showResultActivacionesDialog = false
+                viewModel.resetEjecutarActivacionesState()
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Rounded.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Resultado de Activación", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = response?.mensaje ?: "Proceso de activaciones masivas finalizado.",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    val stats = response?.data
+                    if (stats != null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Clientes Activados:", fontWeight = FontWeight.Medium)
+                                    Text(
+                                        "${stats.activados ?: 0}",
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Errores en proceso:", fontWeight = FontWeight.Medium)
+                                    Text(
+                                        "${stats.errores ?: 0}",
+                                        fontWeight = FontWeight.Bold,
+                                        color = if ((stats.errores ?: 0) > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showResultActivacionesDialog = false
+                        viewModel.resetEjecutarActivacionesState()
+                    }
+                ) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    if (showErrorActivacionesDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showErrorActivacionesDialog = false
+                viewModel.resetEjecutarActivacionesState()
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Rounded.Block,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Error al Activar Clientes", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text(errorActivacionesMessage)
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showErrorActivacionesDialog = false
+                        viewModel.resetEjecutarActivacionesState()
+                    }
+                ) {
+                    Text("Cerrar")
+                }
+            }
+        )
     }
 }
