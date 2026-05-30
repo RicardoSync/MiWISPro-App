@@ -39,6 +39,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Assignment
 import androidx.compose.material.icons.rounded.ReceiptLong
+import androidx.compose.material.icons.rounded.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -88,6 +89,7 @@ sealed interface AppScreen {
     object CortesAutomaticos : AppScreen
     object Tareas : AppScreen
     object Premisas : AppScreen
+    object Logs : AppScreen
     data class FacturaDetail(val factura: com.example.data.FacturaData, val isNew: Boolean) : AppScreen
 }
 
@@ -187,9 +189,10 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
   val navToCortes by viewModel.navigateToCortesAutomaticos.collectAsState()
   val navToTareas by viewModel.navigateToTareas.collectAsState()
   val navToPremisas by viewModel.navigateToPremisas.collectAsState()
+  val navToLogs by viewModel.navigateToLogs.collectAsState()
   val selectedFacturaDetail by viewModel.selectedFacturaDetail.collectAsState()
 
-  val screenState = remember(selectedDetailClient, selectedPagoClient, selectedRouterId, selectedRouterIdForDhcpLeases, navToRegistrar, navToSuspendidos, navToHistorial, navToCortes, navToTareas, navToPremisas, selectedFacturaDetail) {
+  val screenState = remember(selectedDetailClient, selectedPagoClient, selectedRouterId, selectedRouterIdForDhcpLeases, navToRegistrar, navToSuspendidos, navToHistorial, navToCortes, navToTareas, navToPremisas, navToLogs, selectedFacturaDetail) {
     when {
       selectedFacturaDetail != null -> AppScreen.FacturaDetail(selectedFacturaDetail!!.first, selectedFacturaDetail!!.second)
       selectedDetailClient != null -> AppScreen.Detail(selectedDetailClient!!)
@@ -204,6 +207,7 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
       navToCortes -> AppScreen.CortesAutomaticos
       navToTareas -> AppScreen.Tareas
       navToPremisas -> AppScreen.Premisas
+      navToLogs -> AppScreen.Logs
       else -> AppScreen.Main
     }
   }
@@ -289,6 +293,12 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
             onBack = { viewModel.openPremisas(false) }
           )
         }
+        is AppScreen.Logs -> {
+          com.example.ui.screens.LogsScreen(
+            viewModel = viewModel,
+            onBack = { viewModel.openLogs(false) }
+          )
+        }
         is AppScreen.FacturaDetail -> {
           com.example.ui.screens.FacturaDetailScreen(
             factura = targetScreen.factura,
@@ -351,37 +361,8 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
                   }
                 }
                 
-                Spacer(modifier = Modifier.height(12.dp))
                 
-                // Primary Tabs
-                val items = listOf(
-                  NavigationItemData(tab = HomeTab.Home, selectedIcon = Icons.Rounded.Home, unselectedIcon = Icons.Outlined.Home, testTag = "nav_home", label = "Inicio"),
-                  NavigationItemData(tab = HomeTab.Clientes, selectedIcon = Icons.Rounded.People, unselectedIcon = Icons.Outlined.People, testTag = "nav_clientes", label = "Clientes"),
-                  NavigationItemData(tab = HomeTab.Global, selectedIcon = Icons.Rounded.Speed, unselectedIcon = Icons.Outlined.Speed, testTag = "nav_global", label = "Monitor Global"),
-                  NavigationItemData(tab = HomeTab.Mikrotik, selectedIcon = Icons.Rounded.Router, unselectedIcon = Icons.Outlined.Router, testTag = "nav_mikrotik", label = "MikroTik"),
-                  NavigationItemData(tab = HomeTab.Ajustes, selectedIcon = Icons.Rounded.Settings, unselectedIcon = Icons.Outlined.Settings, testTag = "nav_ajustes", label = "Ajustes")
-                )
-
-                items.forEach { item ->
-                  NavigationDrawerItem(
-                    label = { Text(item.label) },
-                    selected = currentTab == item.tab,
-                    onClick = { 
-                      viewModel.selectTab(item.tab)
-                      coroutineScope.launch { drawerState.close() }
-                    },
-                    icon = {
-                      if (item.iconDrawableRes != null) {
-                        Icon(painterResource(id = item.iconDrawableRes), contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.Unspecified)
-                      } else if (item.selectedIcon != null && item.unselectedIcon != null) {
-                        Icon(if (currentTab == item.tab) item.selectedIcon else item.unselectedIcon, contentDescription = null)
-                      }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                  )
-                }
-                
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
                   text = "Gestión",
@@ -445,6 +426,17 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
                   modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
 
+                NavigationDrawerItem(
+                  label = { Text("Logs del Sistema") },
+                  selected = false,
+                  onClick = { 
+                    coroutineScope.launch { drawerState.close() }
+                    viewModel.openLogs(true)
+                  },
+                  icon = { Icon(Icons.Rounded.List, contentDescription = null) },
+                  modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+
 
                 }
               }
@@ -491,6 +483,40 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
                   ),
                   modifier = Modifier.statusBarsPadding()
                 )
+              },
+              bottomBar = {
+                NavigationBar(
+                  containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                ) {
+                  val items = listOf(
+                    NavigationItemData(tab = HomeTab.Home, selectedIcon = Icons.Rounded.Home, unselectedIcon = Icons.Outlined.Home, testTag = "nav_home", label = "Inicio"),
+                    NavigationItemData(tab = HomeTab.Clientes, selectedIcon = Icons.Rounded.People, unselectedIcon = Icons.Outlined.People, testTag = "nav_clientes", label = "Clientes"),
+                    NavigationItemData(tab = HomeTab.Global, selectedIcon = Icons.Rounded.Speed, unselectedIcon = Icons.Outlined.Speed, testTag = "nav_global", label = "Monitoreo"),
+                    NavigationItemData(tab = HomeTab.Mikrotik, selectedIcon = Icons.Rounded.Router, unselectedIcon = Icons.Outlined.Router, testTag = "nav_mikrotik", label = "MikroTik"),
+                    NavigationItemData(tab = HomeTab.Ajustes, selectedIcon = Icons.Rounded.Settings, unselectedIcon = Icons.Outlined.Settings, testTag = "nav_ajustes", label = "Ajustes")
+                  )
+                  items.forEach { item ->
+                    NavigationBarItem(
+                      selected = currentTab == item.tab,
+                      onClick = { viewModel.selectTab(item.tab) },
+                      icon = {
+                        if (item.iconDrawableRes != null) {
+                          Icon(painterResource(id = item.iconDrawableRes), contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.Unspecified)
+                        } else if (item.selectedIcon != null && item.unselectedIcon != null) {
+                          Icon(if (currentTab == item.tab) item.selectedIcon else item.unselectedIcon, contentDescription = null)
+                        }
+                      },
+                      label = { 
+                        Text(
+                          text = item.label,
+                          maxLines = 1,
+                          style = MaterialTheme.typography.labelSmall
+                        ) 
+                      },
+                      alwaysShowLabel = true
+                    )
+                  }
+                }
               }
             ) { innerPadding ->
               when (currentTab) {

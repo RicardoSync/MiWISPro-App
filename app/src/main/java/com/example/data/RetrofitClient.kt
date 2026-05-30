@@ -243,6 +243,11 @@ interface MiwisApiService {
         @Query("accion") accion: Int = 7
     ): MakeLeaseStaticResponse
 
+    @GET("api/get_logs.php")
+    suspend fun getLogs(
+        @Query("token") token: String,
+        @Query("subdominio") subdominio: String
+    ): LogsResponse
 
 }
 

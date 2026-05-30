@@ -1108,4 +1108,37 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    private val _navigateToLogs = MutableStateFlow(false)
+    val navigateToLogs: StateFlow<Boolean> = _navigateToLogs.asStateFlow()
+
+    fun openLogs(open: Boolean) {
+        _navigateToLogs.value = open
+        if (open) {
+            loadLogs()
+        }
+    }
+
+    private val _logsState = MutableStateFlow<UiState<com.example.data.LogsResponse>>(UiState.Loading)
+    val logsState: StateFlow<UiState<com.example.data.LogsResponse>> = _logsState.asStateFlow()
+
+    fun loadLogs() {
+        viewModelScope.launch {
+            _logsState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.getLogs(
+                    token = config.token,
+                    subdominio = config.subdominio
+                )
+                if (response.success) {
+                    _logsState.value = UiState.Success(response)
+                } else {
+                    _logsState.value = UiState.Error("Error al cargar los logs del sistema.")
+                }
+            } catch (e: Exception) {
+                _logsState.value = UiState.Error("Error de red: ${e.localizedMessage ?: "Intente de nuevo"}")
+            }
+        }
+    }
+
 }

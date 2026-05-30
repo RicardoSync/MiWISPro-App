@@ -1,0 +1,3253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Código Fuente - Registro de Obra</title>
+    <!-- Incluir fuente de Google Fonts para un aspecto mas limpio -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Incluir Highlight.js para colorear el codigo de manera profesional (tema claro) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb; /* Azul corporativo */
+            --border-color: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-code: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-size: 11pt; /* Tamaño óptimo para impresión */
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            line-height: 1.5;
+        }
+        
+        /* Contenedor de página para impresión */
+        .page {
+            page-break-after: always;
+            padding: 2cm 1.5cm;
+            position: relative;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 21cm; /* Ancho A4 */
+            margin: 0 auto;
+        }
+        
+        /* Cabecera del documento */
+        .doc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: border-bottom;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .doc-title {
+            font-size: 10pt;
+            font-weight: 600;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .doc-meta {
+            font-size: 9pt;
+            color: var(--text-muted);
+            text-align: right;
+        }
+        
+        /* Información del Archivo (Metadatos) */
+        .file-info-box {
+            background-color: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--primary-color);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-row {
+            margin-bottom: 8px;
+            display: flex;
+        }
+        
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            width: 100px;
+            flex-shrink: 0;
+            color: var(--text-main);
+        }
+        
+        .info-value {
+            flex-grow: 1;
+            color: #334155;
+        }
+        
+        /* Área de Código */
+        .code-section-title {
+            font-size: 11pt;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .code-container {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+            background-color: var(--bg-code);
+        }
+        
+        pre {
+            margin: 0;
+            padding: 15px;
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 8.5pt; /* Ligeramente más pequeño para que quepa bien en impresión */
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            tab-size: 4;
+        }
+        
+        /* Etiqueta de omisión */
+        .omission-badge {
+            display: block;
+            background-color: #fffbeb;
+            color: #b45309;
+            padding: 6px 10px;
+            border-left: 3px solid #f59e0b;
+            margin: 10px 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 9pt;
+            font-style: italic;
+            text-align: center;
+        }
+        
+        /* Evidencias */
+        .evidencia-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .evidencia-item {
+            text-align: center;
+            page-break-inside: avoid;
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+        
+        .evidencia-img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .evidencia-caption {
+            margin-top: 10px;
+            font-size: 10pt;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Ajustes específicos para impresión */
+        @media print {
+            body {
+                background-color: transparent;
+            }
+            .page {
+                margin: 0;
+                padding: 1cm 1.5cm;
+                border: none;
+                box-shadow: none;
+                max-width: none;
+                width: 100%;
+            }
+            /* Evitar que bloques de código se corten a la mitad si es posible */
+            .code-container {
+                page-break-inside: auto;
+            }
+            pre {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            /* En pantallas normales mostrar como documento centrado */
+        }
+        
+        @media screen {
+            body {
+                background-color: #e2e8f0;
+                padding: 40px 0;
+            }
+            .page {
+                background-color: #fff;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                margin-bottom: 40px;
+                border-radius: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/AndroidManifest.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a AndroidManifest.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;manifest xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    xmlns:tools=&quot;http://schemas.android.com/tools&quot;&gt;
+
+    &lt;uses-permission android:name=&quot;android.permission.INTERNET&quot; /&gt;
+    &lt;uses-permission android:name=&quot;android.permission.ACCESS_FINE_LOCATION&quot; /&gt;
+    &lt;uses-permission android:name=&quot;android.permission.ACCESS_COARSE_LOCATION&quot; /&gt;
+
+    &lt;application
+        android:allowBackup=&quot;true&quot;
+        android:dataExtractionRules=&quot;@xml/data_extraction_rules&quot;
+        android:fullBackupContent=&quot;@xml/backup_rules&quot;
+        android:icon=&quot;@mipmap/ic_logo&quot;
+        android:label=&quot;@string/app_name&quot;
+        android:roundIcon=&quot;@mipmap/ic_logo&quot;
+        android:supportsRtl=&quot;true&quot;
+        android:theme=&quot;@style/Theme.MyApplication&quot;&gt;
+        &lt;activity
+            android:name=&quot;.MainActivity&quot;
+            android:exported=&quot;true&quot;
+            android:label=&quot;@string/app_name&quot;
+            android:theme=&quot;@style/Theme.MyApplication&quot;&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name=&quot;android.intent.action.MAIN&quot; /&gt;
+
+                &lt;category android:name=&quot;android.intent.category.LAUNCHER&quot; /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/activity&gt;
+    &lt;/application&gt;
+
+&lt;/manifest&gt;
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/res/xml/data_extraction_rules.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a data_extraction_rules.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;&lt;!--
+   Sample data extraction rules file; uncomment and customize as necessary.
+   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
+   for details.
+--&gt;
+&lt;data-extraction-rules&gt;
+    &lt;cloud-backup&gt;
+        &lt;!-- TODO: Use &lt;include&gt; and &lt;exclude&gt; to control what is backed up.
+        &lt;include .../&gt;
+        &lt;exclude .../&gt;
+        --&gt;
+    &lt;/cloud-backup&gt;
+    &lt;!--
+    &lt;device-transfer&gt;
+        &lt;include .../&gt;
+        &lt;exclude .../&gt;
+    &lt;/device-transfer&gt;
+    --&gt;
+&lt;/data-extraction-rules&gt;
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/res/xml/backup_rules.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a backup_rules.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;&lt;!--
+   Sample backup rules file; uncomment and customize as necessary.
+   See https://developer.android.com/guide/topics/data/autobackup
+   for details.
+   Note: This file is ignored for devices older than API 31
+   See https://developer.android.com/about/versions/12/backup-restore
+--&gt;
+&lt;full-backup-content&gt;
+    &lt;!--
+   &lt;include domain=&quot;sharedpref&quot; path=&quot;.&quot;/&gt;
+   &lt;exclude domain=&quot;sharedpref&quot; path=&quot;device.xml&quot;/&gt;
+--&gt;
+&lt;/full-backup-content&gt;
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/res/mipmap-anydpi-v26/ic_logo_round.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a ic_logo_round.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!--
+  ~ Copyright (C) 2026 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  --&gt;
+&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&gt;
+    &lt;background android:drawable=&quot;@drawable/ic_logo_background&quot;/&gt;
+    &lt;foreground android:drawable=&quot;@mipmap/ic_logo_foreground&quot;/&gt;
+    &lt;monochrome android:drawable=&quot;@mipmap/ic_logo_monochrome&quot;/&gt;
+&lt;/adaptive-icon&gt;</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/res/mipmap-anydpi-v26/ic_logo.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a ic_logo.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!--
+  ~ Copyright (C) 2026 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  --&gt;
+&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&gt;
+    &lt;background android:drawable=&quot;@drawable/ic_logo_background&quot;/&gt;
+    &lt;foreground android:drawable=&quot;@mipmap/ic_logo_foreground&quot;/&gt;
+    &lt;monochrome android:drawable=&quot;@mipmap/ic_logo_monochrome&quot;/&gt;
+&lt;/adaptive-icon&gt;</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/res/drawable/ic_launcher_background.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a ic_launcher_background.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!--
+  ~ Copyright (C) 2026 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  --&gt;
+&lt;vector
+    android:height=&quot;108dp&quot;
+    android:width=&quot;108dp&quot;
+    android:viewportHeight=&quot;108&quot;
+    android:viewportWidth=&quot;108&quot;
+    xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&gt;
+    &lt;path android:fillColor=&quot;#3DDC84&quot;
+          android:pathData=&quot;M0,0h108v108h-108z&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M9,0L9,108&quot;
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,29L89,29&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,39L89,39&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,49L89,49&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,59L89,59&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,69L89,69&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,79L89,79&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M29,19L29,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M39,19L39,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M49,19L49,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M59,19L59,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M69,19L69,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M79,19L79,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+&lt;/vector&gt;
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/res/drawable/ic_tux.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a ic_tux.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    android:width=&quot;24dp&quot;
+    android:height=&quot;24dp&quot;
+    android:viewportWidth=&quot;24&quot;
+    android:viewportHeight=&quot;24&quot;&gt;
+    &lt;!-- Body/Head --&gt;
+    &lt;path
+        android:fillColor=&quot;#555555&quot;
+        android:pathData=&quot;M12,2A6,6 0 0,0 6,8C6,11.23 7.5,14 10,16C9,17.5 7.5,18 5,18C4.5,18 4,18.5 4,19A1,1 0 0,0 5,20H19A1,1 0 0,0 20,19C20,18.5 19.5,18 19,18C16.5,18 15,17.5 14,16C16.5,14 18,11.23 18,8A6,6 0 0,0 12,2Z&quot;/&gt;
+    &lt;!-- Feet (Left &amp; Right) --&gt;
+    &lt;path
+        android:fillColor=&quot;#FFC107&quot;
+        android:pathData=&quot;M6,20C5,20 4.5,21 5,21.5C5.8,22.3 8,22 9,21.5C10,21 9,20 6,20ZM18,20C15,20 14,21 15,21.5C16,22 18.2,22.3 19,21.5C19.5,21 19,20 18,20Z&quot;/&gt;
+    &lt;!-- Belly (White Inner Oval) --&gt;
+    &lt;path
+        android:fillColor=&quot;#FFFFFF&quot;
+        android:pathData=&quot;M12,8C10.34,8 9,10.24 9,13C9,15.76 10.34,17 12,17C13.66,17 15,15.76 15,13C15,10.24 13.66,8 12,8Z&quot;/&gt;
+    &lt;!-- Eyes --&gt;
+    &lt;path
+        android:fillColor=&quot;#FFFFFF&quot;
+        android:pathData=&quot;M10.5,6.5A1,1 0 1,1 9.5,5.5A1,1 0 0,1 10.5,6.5ZM14.5,6.5A1,1 0 1,1 13.5,5.5A1,1 0 0,1 14.5,6.5Z&quot;/&gt;
+    &lt;!-- Pupils --&gt;
+    &lt;path
+        android:fillColor=&quot;#000000&quot;
+        android:pathData=&quot;M10,6.5A0.5,0.5 0 1,1 9.5,6A0.5,0.5 0 0,1 10,6.5ZM14,6.5A0.5,0.5 0 1,1 13.5,6A0.5,0.5 0 0,1 14,6.5Z&quot;/&gt;
+    &lt;!-- Beak --&gt;
+    &lt;path
+        android:fillColor=&quot;#FF9800&quot;
+        android:pathData=&quot;M12,7.5L10,9H14L12,7.5Z&quot;/&gt;
+&lt;/vector&gt;
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/res/drawable/ic_launcher_foreground.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a ic_launcher_foreground.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    android:width=&quot;108dp&quot;
+    android:height=&quot;108dp&quot;
+    android:viewportWidth=&quot;108&quot;
+    android:viewportHeight=&quot;108&quot;&gt;
+    
+    &lt;!-- Outer concentric ring --&gt;
+    &lt;path
+        android:strokeColor=&quot;#FFFFFF&quot;
+        android:strokeWidth=&quot;2.5&quot;
+        android:strokeLineCap=&quot;round&quot;
+        android:pathData=&quot;M 54,12 A 42,42 0 1 1 53.99,12 Z&quot; /&gt;
+
+    &lt;!-- Inner concentric ring --&gt;
+    &lt;path
+        android:strokeColor=&quot;#FFFFFF&quot;
+        android:strokeWidth=&quot;1.2&quot;
+        android:strokeLineCap=&quot;round&quot;
+        android:pathData=&quot;M 54,17 A 37,37 0 1 1 53.99,17 Z&quot; /&gt;
+
+    &lt;!-- Network connection paths --&gt;
+    &lt;path
+        android:strokeColor=&quot;#FFFFFF&quot;
+        android:strokeWidth=&quot;3.2&quot;
+        android:strokeLineCap=&quot;round&quot;
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+    &lt;path
+        android:fillColor=&quot;#FFFFFF&quot;
+        android:pathData=&quot;M 33,59 A 5,5 0 1 1 32.99,59 Z&quot; /&gt;
+
+    &lt;!-- central connecting master node --&gt;
+    &lt;path
+        android:fillColor=&quot;#FFFFFF&quot;
+        android:pathData=&quot;M 54,53.5 A 5.5,5.5 0 1 1 53.99,53.5 Z&quot; /&gt;
+
+    &lt;!-- Bottom mid node --&gt;
+    &lt;path
+        android:fillColor=&quot;#FFFFFF&quot;
+        android:pathData=&quot;M 54,70 A 5,5 0 1 1 53.99,70 Z&quot; /&gt;
+
+    &lt;!-- Top Right node --&gt;
+    &lt;path
+        android:fillColor=&quot;#FFFFFF&quot;
+        android:pathData=&quot;M 75,38 A 5,5 0 1 1 74.99,38 Z&quot; /&gt;
+
+    &lt;!-- Bottom Right node --&gt;
+    &lt;path
+        android:fillColor=&quot;#FFFFFF&quot;
+        android:pathData=&quot;M 75,60 A 5,5 0 1 1 74.99,60 Z&quot; /&gt;
+
+&lt;/vector&gt;
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/res/drawable/ic_logo_background.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a ic_logo_background.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!--
+  ~ Copyright (C) 2026 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  --&gt;
+&lt;vector
+    android:height=&quot;108dp&quot;
+    android:width=&quot;108dp&quot;
+    android:viewportHeight=&quot;108&quot;
+    android:viewportWidth=&quot;108&quot;
+    xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&gt;
+    &lt;path android:fillColor=&quot;#3DDC84&quot;
+          android:pathData=&quot;M0,0h108v108h-108z&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M9,0L9,108&quot;
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,29L89,29&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,39L89,39&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,49L89,49&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,59L89,59&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,69L89,69&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M19,79L89,79&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M29,19L29,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M39,19L39,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M49,19L49,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M59,19L59,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M69,19L69,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+    &lt;path android:fillColor=&quot;#00000000&quot; android:pathData=&quot;M79,19L79,89&quot;
+          android:strokeColor=&quot;#33FFFFFF&quot; android:strokeWidth=&quot;0.8&quot;/&gt;
+&lt;/vector&gt;
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/res/values/colors.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a colors.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;resources&gt;
+    &lt;color name=&quot;purple_200&quot;&gt;#FFBB86FC&lt;/color&gt;
+    &lt;color name=&quot;purple_500&quot;&gt;#FF6200EE&lt;/color&gt;
+    &lt;color name=&quot;purple_700&quot;&gt;#FF3700B3&lt;/color&gt;
+    &lt;color name=&quot;teal_200&quot;&gt;#FF03DAC5&lt;/color&gt;
+    &lt;color name=&quot;teal_700&quot;&gt;#FF018786&lt;/color&gt;
+    &lt;color name=&quot;black&quot;&gt;#FF000000&lt;/color&gt;
+    &lt;color name=&quot;white&quot;&gt;#FFFFFFFF&lt;/color&gt;
+&lt;/resources&gt;
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/res/values/themes.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a themes.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;resources&gt;
+
+    &lt;style name=&quot;Theme.MyApplication&quot; parent=&quot;android:Theme.DeviceDefault.NoActionBar&quot; /&gt;
+&lt;/resources&gt;
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/res/values/strings.xml</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a strings.xml. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="">&lt;resources&gt;
+    &lt;string name=&quot;app_name&quot;&gt;MiWISPro&lt;/string&gt;
+&lt;/resources&gt;
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/MainActivity.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a MainActivity.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example
+
+import android.os.Bundle
+import androidx.fragment.app.FragmentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Paid
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Paid
+import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Speed
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(44.dp))
+
+            Button(
+                onClick = onAuthenticateClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(28.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Icon(Icons.Rounded.Fingerprint, contentDescription = null, modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(&quot;Ingresar de forma Segura&quot;, fontWeight = FontWeight.Bold)
+            }
+        }
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/data/AppConfig.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a AppConfig.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.data
+
+import androidx.room.*
+import kotlinx.coroutines.flow.Flow
+
+@Entity(tableName = &quot;app_config&quot;)
+data class AppConfig(
+    @PrimaryKey val id: Int = 1,
+    val subdominio: String = &quot;&quot;,
+    val token: String = &quot;&quot;,
+    val termsAccepted: Boolean = false
+)
+
+@Dao
+interface AppConfigDao {
+    @Query(&quot;SELECT * FROM app_config WHERE id = 1 LIMIT 1&quot;)
+    fun getConfigFlow(): Flow&lt;AppConfig?&gt;
+
+    @Query(&quot;SELECT * FROM app_config WHERE id = 1 LIMIT 1&quot;)
+    suspend fun getConfig(): AppConfig?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertConfig(config: AppConfig)
+}
+
+@Database(entities = [AppConfig::class], version = 2, exportSchema = false)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun appConfigDao(): AppConfigDao
+
+    companion object {
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
+
+        fun getDatabase(context: android.content.Context): AppDatabase {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    &quot;miwis_pro_database&quot;
+                )
+                .fallbackToDestructiveMigration()
+                .build()
+                INSTANCE = instance
+                instance
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/data/RetrofitClient.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a RetrofitClient.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.data
+
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
+import retrofit2.http.GET
+import retrofit2.http.Query
+import java.util.concurrent.TimeUnit
+
+interface MiwisApiService {
+    @GET(&quot;api/get_clientes.php&quot;)
+    suspend fun getClientes(
+        @Query(&quot;token&quot;) token: String,
+        @Query(&quot;subdominio&quot;) subdominio: String
+    ): ClientApiResponse
+
+    @GET(&quot;api/toggle_status.php&quot;)
+    suspend fun toggleStatus(
+        @Query(&quot;token&quot;) token: String,
+        @Query(&quot;subdominio&quot;) subdominio: String,
+        @Query(&quot;id&quot;) id: String,
+        @Query(&quot;accion&quot;) accion: Int
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+    private const val BASE_URL = &quot;https://miwispro.net/&quot;
+
+    private val moshi = Moshi.Builder()
+        .addLast(KotlinJsonAdapterFactory())
+        .build()
+
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    val apiService: MiwisApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(MiwisApiService::class.java)
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/data/Client.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a Client.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.data
+
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
+data class Client(
+    val id: String,
+    @Json(name = &quot;nombre_completo&quot;) val nombreCompleto: String?,
+    @Json(name = &quot;dni_rfc&quot;) val dniRfc: String?,
+    val telefono: String?,
+    val direccion: String?,
+    @Json(name = &quot;ip_cliente&quot;) val ipCliente: String?,
+    val coordenadas: String?,
+    @Json(name = &quot;id_paquete&quot;) val idPaquete: String?,
+    @Json(name = &quot;id_servicio_extra&quot;) val idServicioExtra: String?,
+    @Json(name = &quot;id_mikrotik&quot;) val idMikrotik: String?,
+    @Json(name = &quot;tipo_conexion&quot;) val tipoConexion: String?, // &quot;pppoe&quot; / &quot;estatica&quot;
+    @Json(name = &quot;pppoe_usuario&quot;) val pppoeUsuario: String?,
+    @Json(name = &quot;pppoe_password&quot;) val pppoePassword: String?,
+    @Json(name = &quot;dia_corte&quot;) val diaCorte: String?,
+    @Json(name = &quot;proximo_pago&quot;) val proximoPago: String?,
+    @Json(name = &quot;promesa_pago_hasta&quot;) val promesaPagoHasta: String?,
+    val estado: String?, // &quot;1&quot; = Activo, &quot;2&quot; = Cortado/Suspendido, etc.
+    val activo: Int?, // 1 or 0
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+    val accion: Int?,
+    @Json(name = &quot;accion_descripcion&quot;) val accionDescripcion: String?,
+    val message: String?,
+    val data: List&lt;DhcpLease&gt;?,
+    val total: Int?
+)
+
+@JsonClass(generateAdapter = true)
+data class MakeLeaseStaticResponse(
+    val success: Boolean,
+    val subdominio: String?,
+    @Json(name = &quot;id_mikrotik&quot;) val idMikrotik: Int?,
+    val nombre: String?,
+    val ip: String?,
+    val accion: Int?,
+    @Json(name = &quot;accion_descripcion&quot;) val accionDescripcion: String?,
+    @Json(name = &quot;ip_objetivo&quot;) val ipObjetivo: String?,
+    val message: String?,
+    val data: DhcpLease?
+)
+
+
+
+
+
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/theme/Type.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a Type.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.theme
+
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+
+// Set of Material typography styles to start with
+val Typography =
+  Typography(
+    bodyLarge =
+      TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp,
+      )
+    /* Other default text styles to override
+    titleLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
+    )
+    */
+  )
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/theme/Color.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a Color.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.theme
+
+import androidx.compose.ui.graphics.Color
+
+// Light Theme Colors (Blue/Minimalist)
+val HighDensityPrimary = Color(0xFF2563EB)     // Electric/Vibrant Blue
+val HighDensityPrimaryContainer = Color(0xFFDBEAFE) // Soft blue pastel
+val HighDensityOnPrimaryContainer = Color(0xFF1E3A8A) // Deep Navy text
+
+val HighDensitySecondary = Color(0xFF64748B)   // Slate
+val HighDensitySecondaryContainer = Color(0xFFF1F5F9) // Cool light gray
+val HighDensityOnSecondaryContainer = Color(0xFF0F172A) // Slate-dark
+
+val HighDensityBackground = Color(0xFFF8FAFC)  // Ultra clean light slate background
+val HighDensitySurface = Color(0xFFFFFFFF)     // Clean white surfaces
+val HighDensitySurfaceVariant = Color(0xFFF1F5F9) // Surface Variant Light
+val HighDensityOutline = Color(0xFFE2E8F0)     // Soft clean border lines
+
+// Dark Theme Colors (Navy / Deep Blue)
+val DarkNavyPrimary = Color(0xFF3B82F6)     // Vibrant Blue for Dark Mode
+val DarkNavyPrimaryContainer = Color(0xFF1E3A8A) // Deep blue container
+val DarkNavyOnPrimaryContainer = Color(0xFFDBEAFE) // Light blue text
+
+val DarkNavySecondary = Color(0xFF94A3B8)   // Light slate
+val DarkNavySecondaryContainer = Color(0xFF1E293B) // Dark slate container
+val DarkNavyOnSecondaryContainer = Color(0xFFF1F5F9) // Light text
+
+val DarkNavyBackground = Color(0xFF020617)  // Deep Navy Background (Almost black)
+val DarkNavySurface = Color(0xFF0F172A)     // Dark Navy Surface
+val DarkNavySurfaceVariant = Color(0xFF1E293B) // Slightly lighter Navy
+val DarkNavyOutline = Color(0xFF334155)     // Border lines for dark mode
+
+val GreenBadgeBg = Color(0xFFECFDF5)           // Mint pastel background
+val GreenBadgeText = Color(0xFF047857)         // Forest mint green text
+val RedBadgeBg = Color(0xFFFEF2F2)             // Soft rose/crimson pastel background
+val RedBadgeText = Color(0xFFB91C1C)           // Rose crimson text
+val BlueBadgeBg = Color(0xFFEFF6FF)            // Sky pastel blue background
+val BlueBadgeText = Color(0xFF1D4ED8)          // Sky royal blue text
+val OrangeBadgeBg = Color(0xFFFFF7ED)          // Honey peach orange pastel background
+val OrangeBadgeText = Color(0xFFC2410C)        // Honey dark orange text
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/theme/Theme.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a Theme.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.theme
+
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+
+private val DarkColorScheme =
+  darkColorScheme(
+    primary = DarkNavyPrimary,
+    onPrimary = Color.White,
+    primaryContainer = DarkNavyPrimaryContainer,
+    onPrimaryContainer = DarkNavyOnPrimaryContainer,
+    secondary = DarkNavySecondary,
+    onSecondary = Color.White,
+    secondaryContainer = DarkNavySecondaryContainer,
+    onSecondaryContainer = DarkNavyOnSecondaryContainer,
+    background = DarkNavyBackground,
+    onBackground = DarkNavyOnSecondaryContainer,
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+    onBackground = HighDensityOnSecondaryContainer,
+    surface = HighDensitySurface,
+    onSurface = HighDensityOnSecondaryContainer,
+    surfaceVariant = HighDensitySecondaryContainer,
+    onSurfaceVariant = HighDensitySecondary,
+    outline = HighDensityOutline
+  )
+
+@Composable
+fun MyApplicationTheme(
+  darkTheme: Boolean = isSystemInDarkTheme(),
+  dynamicColor: Boolean = false,
+  content: @Composable () -&gt; Unit,
+) {
+  val colorScheme = when {
+      dynamicColor &amp;&amp; Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.S -&gt; {
+          val context = LocalContext.current
+          if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+      }
+      darkTheme -&gt; DarkColorScheme
+      else -&gt; LightColorScheme
+  }
+
+  MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/SetupScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a SetupScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CloudQueue
+import androidx.compose.material.icons.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.ui.viewmodel.ClientViewModel
+
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(&quot;Guardar y Continuar&quot;, fontWeight = FontWeight.Bold)
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    OutlinedButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(&quot;https://miwispro.net/&quot;))
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(28.dp)
+                    ) {
+                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(&quot;No tengo cuenta / Contratar&quot;, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/MikrotikDhcpLeasesScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a MikrotikDhcpLeasesScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                    Icon(
+                        imageVector = Icons.Rounded.OfflineShare,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(&quot;Hacer Estático&quot;, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+private fun getDeviceIcon(hostName: String?): androidx.compose.ui.graphics.vector.ImageVector {
+    val name = hostName?.lowercase() ?: &quot;&quot;
+    return when {
+        name.contains(&quot;pixel&quot;) || name.contains(&quot;phone&quot;) || name.contains(&quot;oppo&quot;) || name.contains(&quot;samsung&quot;) || name.contains(&quot;iphone&quot;) || name.contains(&quot;android&quot;) || name.contains(&quot;redmi&quot;) || name.contains(&quot;xiaomi&quot;) || name.contains(&quot;huawei&quot;) || name.contains(&quot;moto&quot;) -&gt; Icons.Rounded.Smartphone
+        name.contains(&quot;pc&quot;) || name.contains(&quot;desktop&quot;) || name.contains(&quot;laptop&quot;) || name.contains(&quot;msi&quot;) || name.contains(&quot;macbook&quot;) || name.contains(&quot;computer&quot;) -&gt; Icons.Rounded.Laptop
+        name.contains(&quot;ap&quot;) || name.contains(&quot;server&quot;) || name.contains(&quot;mikrotik&quot;) || name.contains(&quot;router&quot;) || name.contains(&quot;sw&quot;) -&gt; Icons.Rounded.Router
+        name.contains(&quot;tv&quot;) || name.contains(&quot;smart&quot;) || name.contains(&quot;box&quot;) -&gt; Icons.Rounded.Tv
+        name.contains(&quot;camera&quot;) || name.contains(&quot;cam&quot;) -&gt; Icons.Rounded.Videocam
+        name.contains(&quot;printer&quot;) || name.contains(&quot;print&quot;) -&gt; Icons.Rounded.Print
+        else -&gt; Icons.Rounded.Devices
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/DashboardScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a DashboardScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Message
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = hintText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/PremisasScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a PremisasScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.example.data.FacturaData
+import com.example.ui.viewmodel.ClientViewModel
+import com.example.ui.viewmodel.UiState
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilledTonalButton(
+                    onClick = onAnular,
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    contentPadding = PaddingValues(horizontal = 16.dp)
+                ) {
+                    Icon(Icons.Rounded.Block, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(&quot;Anular&quot;, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/GlobalConsumptionScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a GlobalConsumptionScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.ui.theme.*
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                    .background(if (status) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Router,
+                    contentDescription = null,
+                    tint = if (status) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                Text(ip, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+            }
+            if (status) {
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(&quot;$clientes Clientes&quot;, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text(&quot;ONLINE&quot;, style = MaterialTheme.typography.labelSmall, color = GreenBadgeText)
+                }
+            } else {
+                Text(&quot;OFFLINE&quot;, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = RedBadgeText)
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/ClientesSuspendidosScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a ClientesSuspendidosScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Phone
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.ui.viewmodel.ClientViewModel
+import com.example.ui.viewmodel.UiState
+
+@OptIn(ExperimentalMaterial3Api::class)
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                                            )
+                                        }
+                                    }
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(
+                                            text = &quot;Deuda&quot;,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.secondary
+                                        )
+                                        Text(
+                                            text = &quot;$${cliente.saldoActual ?: &quot;0.00&quot;}&quot;,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Black,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/RegistrarClienteScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a RegistrarClienteScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.Manifest
+import android.app.DatePickerDialog
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
+import android.widget.Toast
+import android.annotation.SuppressLint
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                                text = { Text(&quot;${srv.nombre} (+$${srv.precio})&quot;) },
+                                onClick = { selectedServicioExtra = srv; expandedServicio = false }
+                            )
+                        }
+                    }
+                }
+            }
+
+            OutlinedTextField(
+                value = promesaPago,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(&quot;Promesa de Pago&quot;) },
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker { date -&gt; promesaPago = date } }) {
+                        Icon(Icons.Rounded.CalendarToday, contentDescription = null)
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(80.dp)) // padding for FAB
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/AjustesScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a AjustesScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.ui.viewmodel.ClientViewModel
+import com.example.ui.viewmodel.UiState
+
+@Composable
+fun AjustesScreen(
+    viewModel: ClientViewModel,
+    modifier: Modifier = Modifier
+) {
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(horizontal = 16.dp))
+
+                        ListItem(
+                            headlineContent = { Text(&quot;Software de Gestión&quot;) },
+                            supportingContent = { Text(&quot;MiWISProApp desarrollada por Software Escobedo.&quot;) },
+                            leadingContent = {
+                                Icon(
+                                    Icons.Rounded.DeveloperMode,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            colors = ListItemDefaults.colors(
+                                containerColor = Color.Transparent,
+                                headlineColor = MaterialTheme.colorScheme.onSurface,
+                                supportingColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/MikrotikDashboardScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a MikrotikDashboardScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import android.widget.Toast
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+}
+
+
+
+private fun parseSizeToMB(sizeStr: String?): Double {
+    if (sizeStr == null) return 0.0
+    val cleaned = sizeStr.uppercase().trim()
+    val value = cleaned.replace(Regex(&quot;[^0-9.]&quot;), &quot;&quot;).toDoubleOrNull() ?: 0.0
+    return when {
+        cleaned.contains(&quot;MIB&quot;) || cleaned.contains(&quot;MB&quot;) -&gt; value
+        cleaned.contains(&quot;KIB&quot;) || cleaned.contains(&quot;KB&quot;) -&gt; value / 1024.0
+        cleaned.contains(&quot;GIB&quot;) || cleaned.contains(&quot;GB&quot;) -&gt; value * 1024.0
+        else -&gt; value / (1024.0 * 1024.0) // Assume bytes if no unit
+    }
+}
+
+private fun formatBitsToHuman(bits: Double): String {
+    return when {
+        bits &gt;= 1_000_000_000 -&gt; String.format(java.util.Locale.US, &quot;%.2f Gbps&quot;, bits / 1_000_000_000.0)
+        bits &gt;= 1_000_000 -&gt; String.format(java.util.Locale.US, &quot;%.2f Mbps&quot;, bits / 1_000_000.0)
+        bits &gt;= 1_000 -&gt; String.format(java.util.Locale.US, &quot;%.2f Kbps&quot;, bits / 1_000.0)
+        else -&gt; String.format(java.util.Locale.US, &quot;%.2f bps&quot;, bits)
+    }
+}
+
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/TermsScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a TermsScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Assignment
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.ui.viewmodel.ClientViewModel
+
+@Composable
+fun TermsScreen(viewModel: ClientViewModel) {
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(&quot;Aceptar Términos&quot;, fontWeight = FontWeight.Bold)
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    OutlinedButton(
+                        onClick = {
+                            viewModel.downloadTerms(context)
+                            Toast.makeText(context, &quot;Descarga iniciada...&quot;, Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(28.dp)
+                    ) {
+                        Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(&quot;Leer / Descargar PDF&quot;, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/FacturaDetailScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a FacturaDetailScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.data.FacturaData
+import com.example.ui.theme.*
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+
+@Composable
+private fun DetailRow(label: String, value: String, valueColor: Color = MaterialTheme.colorScheme.onSurface) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.secondary
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = valueColor,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f).padding(start = 16.dp)
+        )
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/MikrotiksScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a MikrotiksScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+        modifier = modifier.padding(vertical = 4.dp, horizontal = 2.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+            modifier = Modifier.size(16.dp)
+        )
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                color = valueColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/TareasScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a TareasScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.Router
+import androidx.compose.material.icons.rounded.NetworkCheck
+import androidx.compose.material.icons.rounded.Payment
+import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material.icons.rounded.Assessment
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.ui.viewmodel.ClientViewModel
+import com.example.ui.viewmodel.UiState
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                    tint = if (isChecked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Switch(
+                checked = isChecked,
+                onCheckedChange = onCheckedChange
+            )
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/RegistrarPagoScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a RegistrarPagoScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            fontWeight = FontWeight.Medium
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = when {
+                isHighlighted -&gt; RedBadgeText
+                isWarning -&gt; OrangeBadgeText
+                else -&gt; MaterialTheme.colorScheme.onSurface
+            }
+        )
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/PagosScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a PagosScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.widget.Toast
+import android.util.Log
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(&quot;Cancelar&quot;)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            val client = selectedClient
+                            val amount = amountText.toDoubleOrNull() ?: 0.0
+                            if (client != null &amp;&amp; amount &gt; 0) {
+                                onSave(client, amount, selectedMethod, conceptText)
+                            } else {
+                                // Raise Toast
+                            }
+                        },
+                        enabled = selectedClient != null &amp;&amp; amountText.isNotEmpty(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(&quot;Registrar&quot;)
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/CortesAutomaticosScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a CortesAutomaticosScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.PowerSettingsNew
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                        Icons.Rounded.Block,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(&quot;Error al Activar Clientes&quot;, fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text(errorActivacionesMessage)
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showErrorActivacionesDialog = false
+                        viewModel.resetEjecutarActivacionesState()
+                    }
+                ) {
+                    Text(&quot;Cerrar&quot;)
+                }
+            }
+        )
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/HistorialPagosScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a HistorialPagosScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.app.DatePickerDialog
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+    }
+}
+
+@Composable
+fun ReceiptRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(1.5f),
+            textAlign = androidx.compose.ui.text.style.TextAlign.End
+        )
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/HomeScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a HomeScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                    Text(
+                        &quot;Deuda&quot;,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+
+                // Call Whatsapp action button directly here!
+                IconButton(
+                    onClick = onContact,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(GreenBadgeBg, CircleShape)
+                ) {
+                    Icon(
+                        Icons.Rounded.Chat,
+                        contentDescription = &quot;Enviar Recordatorio&quot;,
+                        tint = GreenBadgeText,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/ClientesScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a ClientesScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                    Icon(if (isActive) Icons.Rounded.Block else Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (isActive) &quot;Cortar&quot; else &quot;Activar&quot;, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+    }
+}
+
+// Global helper to resolve compilation dependencies in other screens
+fun triggerWhatsAppMessage(context: Context, client: Client) {
+    if (client.telefono.isNullOrEmpty()) {
+        Toast.makeText(context, &quot;Este cliente no tiene teléfono&quot;, Toast.LENGTH_SHORT).show()
+        return
+    }
+    try {
+        val rawMessage = &quot;Hola ${client.nombreCompleto}, le saludamos de Doblenet.&quot;
+        val encodedMsg = java.net.URLEncoder.encode(rawMessage, &quot;UTF-8&quot;)
+        val uri = &quot;https://api.whatsapp.com/send?phone=${client.telefono}&amp;text=$encodedMsg&quot;
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        Toast.makeText(context, &quot;No se pudo abrir WhatsApp&quot;, Toast.LENGTH_SHORT).show()
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/screens/ClientDetailScreen.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a ClientDetailScreen.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.screens
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.*
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+                                    .background(textColor.copy(alpha = 0.1f))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    (bill.estado ?: &quot;Pendiente&quot;).uppercase(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Black,
+                                    color = textColor
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(Icons.Rounded.Event, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
+                                Text(&quot;Vence: ${bill.fechaVencimiento ?: &quot;-&quot;}&quot;, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                            }
+                            Text(&quot;$${bill.montoPendiente ?: &quot;0.00&quot;}&quot;, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Black, color = textColor)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <!-- Cabecera Institucional -->
+        <div class="doc-header">
+            <div class="doc-title">Registro de Obra</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <!-- Bloque de Metadatos -->
+        <div class="file-info-box">
+            <div class="info-row">
+                <div class="info-label">Ruta / Archivo:</div>
+                <div class="info-value"><strong>app/src/main/java/com/example/ui/viewmodel/ClientViewModel.kt</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Descripción:</div>
+                <div class="info-value">Componente lógico correspondiente a ClientViewModel.kt. Contiene la estructura y sintaxis necesaria para la correcta ejecución de esta sección dentro del sistema.</div>
+            </div>
+        </div>
+        
+        <!-- Bloque de Código -->
+        <div class="code-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Código Fuente
+        </div>
+        <div class="code-container">
+            <pre><code class="language-kotlin">package com.example.ui.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.data.Client
+import com.example.data.RetrofitClient
+import com.example.data.AppDatabase
+import com.example.data.AppConfig
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import android.app.DownloadManager
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
+
+sealed interface UiState&lt;out T&gt; {
+    object Loading : UiState&lt;Nothing&gt;
+    data class Success&lt;T&gt;(val data: T) : UiState&lt;T&gt;
+    data class Error(val message: String) : UiState&lt;Nothing&gt;
+}
+
+enum class HomeTab {
+
+<span class='omission-badge'>/* ... [ Código extenso: Se omiten líneas intermedias. Mostrando primeras y últimas 25 líneas ] ... */</span>
+
+        viewModelScope.launch {
+            _configAutomatizacionState.value = UiState.Loading
+            try {
+                val config = _appConfig.value
+                val response = RetrofitClient.apiService.updateConfigAutomatizacion(
+                    token = config.token,
+                    subdominio = config.subdominio,
+                    statsMikrotikActivo = statsMikrotikActivo,
+                    monitorTraficoActivo = monitorTraficoActivo,
+                    recordatorioPagoActivo = recordatorioPagoActivo,
+                    recordatorioCorteActivo = recordatorioCorteActivo,
+                    reporteDiarioActivo = reporteDiarioActivo
+                )
+                if (response.success) {
+                    _configAutomatizacionState.value = UiState.Success(response)
+                } else {
+                    _configAutomatizacionState.value = UiState.Error(response.error ?: &quot;Error al actualizar configuración de automatización&quot;)
+                }
+            } catch (e: Exception) {
+                _configAutomatizacionState.value = UiState.Error(e.message ?: &quot;Error de red&quot;)
+            }
+        }
+    }
+
+}
+</code></pre>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="doc-header">
+            <div class="doc-title">Evidencias Visuales</div>
+            <div class="doc-meta">Anexo Técnico &bull; 2026</div>
+        </div>
+        
+        <div class="file-info-box" style="border-left-color: #10b981;">
+            <div class="info-row">
+                <div class="info-label" style="width: 140px;">Sección:</div>
+                <div class="info-value"><strong>Anexo de Interfaz Gráfica (Pantallas)</strong></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label" style="width: 140px;">Descripción:</div>
+                <div class="info-value">Capturas de pantalla que demuestran el funcionamiento, diseño y la experiencia de usuario del sistema.</div>
+            </div>
+        </div>
+        
+        <div class="evidencia-grid">
+            
+            <div class="evidencia-item">
+                <img src="evidencia/1.png" class="evidencia-img" alt="Evidencia: 1.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (1.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/10.png" class="evidencia-img" alt="Evidencia: 10.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (10.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/11.png" class="evidencia-img" alt="Evidencia: 11.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (11.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/12.png" class="evidencia-img" alt="Evidencia: 12.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (12.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/13.png" class="evidencia-img" alt="Evidencia: 13.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (13.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/14.png" class="evidencia-img" alt="Evidencia: 14.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (14.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/15.png" class="evidencia-img" alt="Evidencia: 15.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (15.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/16.png" class="evidencia-img" alt="Evidencia: 16.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (16.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/17.png" class="evidencia-img" alt="Evidencia: 17.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (17.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/18.png" class="evidencia-img" alt="Evidencia: 18.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (18.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/19.png" class="evidencia-img" alt="Evidencia: 19.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (19.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/2.png" class="evidencia-img" alt="Evidencia: 2.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (2.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/20.png" class="evidencia-img" alt="Evidencia: 20.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (20.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/21.png" class="evidencia-img" alt="Evidencia: 21.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (21.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/3.png" class="evidencia-img" alt="Evidencia: 3.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (3.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/4.png" class="evidencia-img" alt="Evidencia: 4.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (4.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/5.png" class="evidencia-img" alt="Evidencia: 5.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (5.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/6.png" class="evidencia-img" alt="Evidencia: 6.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (6.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/7.png" class="evidencia-img" alt="Evidencia: 7.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (7.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/8.png" class="evidencia-img" alt="Evidencia: 8.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (8.png)</div>
+            </div>
+            <div class="evidencia-item">
+                <img src="evidencia/9.png" class="evidencia-img" alt="Evidencia: 9.png">
+                <div class="evidencia-caption">Figura: Captura de pantalla de la interfaz (9.png)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cargar Highlight.js para dar formato profesional al código -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('pre code').forEach((el) => {
+                // No resaltar la etiqueta de omisión
+                const originalHTML = el.innerHTML;
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = originalHTML;
+                
+                // Extraer el contenido para resaltarlo (sin el badge)
+                hljs.highlightElement(el);
+            });
+        });
+    </script>
+</body>
+</html>
