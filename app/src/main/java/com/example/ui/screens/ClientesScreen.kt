@@ -315,13 +315,12 @@ fun ClientCard(
     val isAdeudo = estadoInt == 2
     val isSuspendido = estadoInt == 3
 
-    OutlinedCard(
+    Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
