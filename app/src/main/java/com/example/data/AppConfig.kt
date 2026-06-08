@@ -8,7 +8,9 @@ data class AppConfig(
     @PrimaryKey val id: Int = 1,
     val subdominio: String = "",
     val token: String = "",
-    val termsAccepted: Boolean = false
+    val termsAccepted: Boolean = false,
+    val serverUrl: String = "https://miwispro.net/",
+    val rol: String = "Administrador"
 )
 
 @Dao
@@ -23,7 +25,7 @@ interface AppConfigDao {
     suspend fun insertConfig(config: AppConfig)
 }
 
-@Database(entities = [AppConfig::class], version = 2, exportSchema = false)
+@Database(entities = [AppConfig::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appConfigDao(): AppConfigDao
 

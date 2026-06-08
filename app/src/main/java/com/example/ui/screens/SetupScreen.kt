@@ -28,6 +28,8 @@ fun SetupScreen(viewModel: ClientViewModel) {
     val context = LocalContext.current
     var subdominioInput by remember { mutableStateOf("") }
     var tokenInput by remember { mutableStateOf("") }
+    var serverUrlInput by remember { mutableStateOf("https://miwispro.net/") }
+    var rolInput by remember { mutableStateOf("Administrador") }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -93,7 +95,7 @@ fun SetupScreen(viewModel: ClientViewModel) {
                     OutlinedTextField(
                         value = subdominioInput,
                         onValueChange = { subdominioInput = it },
-                        label = { Text("Subdominio") },
+                        label = { Text("Subdominio / ID") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         singleLine = true
@@ -110,12 +112,43 @@ fun SetupScreen(viewModel: ClientViewModel) {
                         singleLine = true
                     )
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = serverUrlInput,
+                        onValueChange = { serverUrlInput = it },
+                        label = { Text("URL del Servidor (opcional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    Text("Selecciona tu Rol", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = rolInput == "Administrador",
+                            onClick = { rolInput = "Administrador" }
+                        )
+                        Text("Administrador", modifier = Modifier.padding(end = 16.dp))
+                        RadioButton(
+                            selected = rolInput == "Cajero",
+                            onClick = { rolInput = "Cajero" }
+                        )
+                        Text("Cajero")
+                    }
+
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
                         onClick = {
                             if (subdominioInput.isNotBlank() && tokenInput.isNotBlank()) {
-                                viewModel.updateConfig(subdominioInput.trim(), tokenInput.trim())
+                                viewModel.updateConfig(subdominioInput.trim(), tokenInput.trim(), serverUrlInput.trim(), rolInput)
                             } else {
                                 Toast.makeText(context, "Los campos no pueden estar vacíos", Toast.LENGTH_SHORT).show()
                             }

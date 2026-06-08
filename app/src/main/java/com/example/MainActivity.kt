@@ -103,7 +103,15 @@ class MainActivity : FragmentActivity() {
         val appConfig by viewModel.appConfig.collectAsState()
         val isConfigLoaded by viewModel.isConfigLoaded.collectAsState()
 
-        var isAuthenticated by remember { mutableStateOf(false) }
+        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        var isAuthenticated by remember { 
+            val biometricManager = BiometricManager.from(this@MainActivity)
+            val canAuth = biometricManager.canAuthenticate(authenticators)
+            val skipAuth = canAuth == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED || 
+                           canAuth == BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE ||
+                           canAuth == BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED
+            mutableStateOf(skipAuth) 
+        }
         var authError by remember { mutableStateOf<String?>(null) }
 
         val triggerBiometricAuth = {
@@ -348,7 +356,7 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                      "Administrador",
+                      appConfig.rol,
                       style = MaterialTheme.typography.titleMedium,
                       color = MaterialTheme.colorScheme.onPrimary,
                       fontWeight = FontWeight.Bold
@@ -371,6 +379,7 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
                   modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp)
                 )
 
+                if (appConfig.rol != "Cajero") {
                 NavigationDrawerItem(
                   label = { Text("Clientes suspendidos") },
                   selected = false,
@@ -436,6 +445,7 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
                   icon = { Icon(Icons.Rounded.List, contentDescription = null) },
                   modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
+                }
 
 
                 }
@@ -488,13 +498,19 @@ fun MainAppContent(viewModel: ClientViewModel = viewModel()) {
                 NavigationBar(
                   containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                 ) {
-                  val items = listOf(
-                    NavigationItemData(tab = HomeTab.Home, selectedIcon = Icons.Rounded.Home, unselectedIcon = Icons.Outlined.Home, testTag = "nav_home", label = "Inicio"),
-                    NavigationItemData(tab = HomeTab.Clientes, selectedIcon = Icons.Rounded.People, unselectedIcon = Icons.Outlined.People, testTag = "nav_clientes", label = "Clientes"),
-                    NavigationItemData(tab = HomeTab.Global, selectedIcon = Icons.Rounded.Speed, unselectedIcon = Icons.Outlined.Speed, testTag = "nav_global", label = "Monitoreo"),
-                    NavigationItemData(tab = HomeTab.Mikrotik, selectedIcon = Icons.Rounded.Router, unselectedIcon = Icons.Outlined.Router, testTag = "nav_mikrotik", label = "MikroTik"),
-                    NavigationItemData(tab = HomeTab.Ajustes, selectedIcon = Icons.Rounded.Settings, unselectedIcon = Icons.Outlined.Settings, testTag = "nav_ajustes", label = "Ajustes")
-                  )
+                  val items = if (appConfig.rol == "Cajero") {
+                    listOf(
+                      NavigationItemData(tab = HomeTab.Clientes, selectedIcon = Icons.Rounded.People, unselectedIcon = Icons.Outlined.People, testTag = "nav_clientes", label = "Clientes")
+                    )
+                  } else {
+                    listOf(
+                      NavigationItemData(tab = HomeTab.Home, selectedIcon = Icons.Rounded.Home, unselectedIcon = Icons.Outlined.Home, testTag = "nav_home", label = "Inicio"),
+                      NavigationItemData(tab = HomeTab.Clientes, selectedIcon = Icons.Rounded.People, unselectedIcon = Icons.Outlined.People, testTag = "nav_clientes", label = "Clientes"),
+                      NavigationItemData(tab = HomeTab.Global, selectedIcon = Icons.Rounded.Speed, unselectedIcon = Icons.Outlined.Speed, testTag = "nav_global", label = "Monitoreo"),
+                      NavigationItemData(tab = HomeTab.Mikrotik, selectedIcon = Icons.Rounded.Router, unselectedIcon = Icons.Outlined.Router, testTag = "nav_mikrotik", label = "MikroTik"),
+                      NavigationItemData(tab = HomeTab.Ajustes, selectedIcon = Icons.Rounded.Settings, unselectedIcon = Icons.Outlined.Settings, testTag = "nav_ajustes", label = "Ajustes")
+                    )
+                  }
                   items.forEach { item ->
                     NavigationBarItem(
                       selected = currentTab == item.tab,

@@ -230,9 +230,16 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
             _appConfig.value = existingConfig
             _isConfigLoaded.value = true
             
+            // Set base URL initially
+            RetrofitClient.setBaseUrl(existingConfig.serverUrl)
+            
             // Initial payload loading with actual db credentials
             loadClientes()
-            loadDashboard()
+            if (existingConfig.rol == "Cajero") {
+                _currentTab.value = HomeTab.Clientes
+            } else {
+                loadDashboard()
+            }
         }
     }
 
@@ -259,11 +266,12 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
         _currentPage.value = 1
     }
 
-    fun updateConfig(subdominio: String, token: String) {
+    fun updateConfig(subdominio: String, token: String, serverUrl: String = "https://miwispro.net/", rol: String = "Administrador") {
         viewModelScope.launch {
-            val updated = _appConfig.value.copy(subdominio = subdominio, token = token)
+            val updated = _appConfig.value.copy(subdominio = subdominio, token = token, serverUrl = serverUrl, rol = rol)
             configDao.insertConfig(updated)
             _appConfig.value = updated
+            RetrofitClient.setBaseUrl(serverUrl)
             // Automatically refresh client payload with new settings
             loadClientes()
         }

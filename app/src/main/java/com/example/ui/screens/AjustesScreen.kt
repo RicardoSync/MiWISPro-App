@@ -31,6 +31,7 @@ fun AjustesScreen(
     // Local input states bound to the database state flow
     var subdominioInput by remember(config) { mutableStateOf(config.subdominio) }
     var tokenInput by remember(config) { mutableStateOf(config.token) }
+    var serverUrlInput by remember(config) { mutableStateOf(config.serverUrl) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -86,7 +87,7 @@ fun AjustesScreen(
                             OutlinedTextField(
                                 value = subdominioInput,
                                 onValueChange = { subdominioInput = it },
-                                label = { Text("Subdominio") },
+                                label = { Text("Subdominio / ID") },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -111,16 +112,31 @@ fun AjustesScreen(
                                 singleLine = true
                             )
 
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedTextField(
+                                value = serverUrlInput,
+                                onValueChange = { serverUrlInput = it },
+                                label = { Text("URL del Servidor") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                ),
+                                singleLine = true
+                            )
+
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            val hasChanges = subdominioInput != config.subdominio || tokenInput != config.token
+                            val hasChanges = subdominioInput != config.subdominio || tokenInput != config.token || serverUrlInput != config.serverUrl
                             Button(
                                 onClick = {
                                     if (subdominioInput.isNotBlank() && tokenInput.isNotBlank()) {
-                                        viewModel.updateConfig(subdominioInput.trim(), tokenInput.trim())
+                                        viewModel.updateConfig(subdominioInput.trim(), tokenInput.trim(), serverUrlInput.trim())
                                         Toast.makeText(context, "¡Configuración guardada en Base de Datos local!", Toast.LENGTH_SHORT).show()
                                     } else {
-                                        Toast.makeText(context, "Los campos no pueden estar vacíos", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Los campos de Subdominio y Token no pueden estar vacíos", Toast.LENGTH_SHORT).show()
                                     }
                                 },
                                 enabled = hasChanges,

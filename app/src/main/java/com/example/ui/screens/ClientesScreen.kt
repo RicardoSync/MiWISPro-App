@@ -49,6 +49,8 @@ fun ClientesScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val currentPage by viewModel.currentPage.collectAsState()
     val itemsPerPage by viewModel.itemsPerPage.collectAsState()
+    val appConfig by viewModel.appConfig.collectAsState()
+    val isCajero = appConfig.rol == "Cajero"
     
     var clientToToggle by remember { mutableStateOf<Client?>(null) }
     
@@ -214,6 +216,7 @@ fun ClientesScreen(
                                 items(paginatedList, key = { it.id }) { client ->
                                     ClientCard(
                                         client = client,
+                                        isCajero = isCajero,
                                         onDetail = { viewModel.selectClientForDetail(client) },
                                         onPago = { viewModel.selectClientForPago(client) },
                                         onToggleStatus = { clientToToggle = client }
@@ -291,14 +294,16 @@ fun ClientesScreen(
             }
         } // Closes Column
 
-        FloatingActionButton(
-            onClick = { viewModel.openRegistrarCliente(true) },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = 76.dp, end = 16.dp),
-            containerColor = MaterialTheme.colorScheme.primary
-        ) {
-            Icon(Icons.Rounded.PersonAdd, contentDescription = "Registrar Cliente")
+        if (!isCajero) {
+            FloatingActionButton(
+                onClick = { viewModel.openRegistrarCliente(true) },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(bottom = 76.dp, end = 16.dp),
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Rounded.PersonAdd, contentDescription = "Registrar Cliente")
+            }
         }
     } // Closes Box
 } // Closes ClientesScreen
@@ -306,6 +311,7 @@ fun ClientesScreen(
 @Composable
 fun ClientCard(
     client: Client,
+    isCajero: Boolean,
     onDetail: () -> Unit,
     onPago: () -> Unit,
     onToggleStatus: () -> Unit
@@ -471,14 +477,16 @@ fun ClientCard(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedButton(
-                    onClick = onDetail,
-                    modifier = Modifier.weight(1f).testTag("action_profile_${client.id}"),
-                    contentPadding = PaddingValues(horizontal = 0.dp)
-                ) {
-                    Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Perfil", style = MaterialTheme.typography.labelSmall)
+                if (!isCajero) {
+                    OutlinedButton(
+                        onClick = onDetail,
+                        modifier = Modifier.weight(1f).testTag("action_profile_${client.id}"),
+                        contentPadding = PaddingValues(horizontal = 0.dp)
+                    ) {
+                        Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Perfil", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
 
                 Button(
@@ -491,18 +499,20 @@ fun ClientCard(
                     Text("Cobro", style = MaterialTheme.typography.labelSmall)
                 }
 
-                FilledTonalButton(
-                    onClick = onToggleStatus,
-                    modifier = Modifier.weight(1.1f).testTag("action_toggle_${client.id}"),
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = if (isActive) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = if (isActive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
-                    ),
-                    contentPadding = PaddingValues(horizontal = 0.dp)
-                ) {
-                    Icon(if (isActive) Icons.Rounded.Block else Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(if (isActive) "Cortar" else "Activar", style = MaterialTheme.typography.labelSmall)
+                if (!isCajero) {
+                    FilledTonalButton(
+                        onClick = onToggleStatus,
+                        modifier = Modifier.weight(1.1f).testTag("action_toggle_${client.id}"),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = if (isActive) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = if (isActive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                        ),
+                        contentPadding = PaddingValues(horizontal = 0.dp)
+                    ) {
+                        Icon(if (isActive) Icons.Rounded.Block else Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(if (isActive) "Cortar" else "Activar", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
         }

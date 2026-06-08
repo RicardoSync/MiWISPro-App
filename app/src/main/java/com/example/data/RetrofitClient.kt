@@ -252,7 +252,9 @@ interface MiwisApiService {
 }
 
 object RetrofitClient {
-    private const val BASE_URL = "https://miwispro.net/"
+    private var currentBaseUrl = "https://miwispro.net/"
+    private var retrofit: Retrofit? = null
+    private var _apiService: MiwisApiService? = null
 
     private val moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
@@ -268,12 +270,33 @@ object RetrofitClient {
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    val apiService: MiwisApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .build()
-            .create(MiwisApiService::class.java)
+    fun setBaseUrl(url: String) {
+        if (url.isBlank()) return
+        val safeUrl = if (url.endsWith("/")) url else "$url/"
+        
+        // Agregar scheme http:// por defecto si no lo tiene (para ips)
+        val finalUrl = if (!safeUrl.startsWith("http://") && !safeUrl.startsWith("https://")) {
+            "http://$safeUrl"
+        } else {
+            safeUrl
+        }
+        
+        if (currentBaseUrl != finalUrl || _apiService == null) {
+            currentBaseUrl = finalUrl
+            retrofit = Retrofit.Builder()
+                .baseUrl(currentBaseUrl)
+                .client(okHttpClient)
+                .addConverterFactory(MoshiConverterFactory.create(moshi))
+                .build()
+            _apiService = retrofit!!.create(MiwisApiService::class.java)
+        }
     }
+
+    val apiService: MiwisApiService
+        get() {
+            if (_apiService == null) {
+                setBaseUrl(currentBaseUrl)
+            }
+            return _apiService!!
+        }
 }
