@@ -5,6 +5,8 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -53,6 +55,7 @@ fun SetupScreen(viewModel: ClientViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(32.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
                     Box(
                         modifier = Modifier
